@@ -22,6 +22,18 @@ from cloudwise.core.config import Settings
 class AWSAccountService:
     """Provide AWS account information to the API layer."""
 
+    def __init__(
+        self,
+        session: AsyncSession | None = None,
+        settings: Settings | None = None,
+    ) -> None:
+        self._session = session
+        self._cipher = (
+            ExternalIdCipher(settings.external_id_encryption_key.get_secret_value())
+            if settings
+            else None
+        )
+
     def get_identity(self, region: str) -> AWSIdentityResponse:
         """Verify and return the current AWS identity."""
 
@@ -136,17 +148,4 @@ class AWSAccountService:
             status=connection.status,
             external_id=external_id,
             verified_at=connection.verified_at,
-        )
-
-
-    def __init__(
-        self,
-        session: AsyncSession | None = None,
-        settings: Settings | None = None,
-    ) -> None:
-        self._session = session
-        self._cipher = (
-            ExternalIdCipher(settings.external_id_encryption_key.get_secret_value())
-            if settings
-            else None
         )
