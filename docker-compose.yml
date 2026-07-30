@@ -1,0 +1,158 @@
+name: cloudwise
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cloudwise}
+      POSTGRES_USER: ${POSTGRES_USER:-cloudwise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cloudwise}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CLOUDWISE_ENVIRONMENT: ${CLOUDWISE_ENVIRONMENT:-local}
+      CLOUDWISE_DATABASE_URL: ${CLOUDWISE_DATABASE_URL:-postgresql+asyncpg://cloudwise:cloudwise@postgres:5432/cloudwise}
+      CLOUDWISE_REDIS_URL: ${CLOUDWISE_REDIS_URL:-redis://redis:6379/0}
+      CLOUDWISE_CORS_ORIGINS: ${CLOUDWISE_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/tests:/app/tests:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  worker:
+    build:
+      context: ./backend
+      target: production
+    command:
+      [
+        "celery",
+        "-A",
+        "cloudwise.worker:celery_app",
+        "worker",
+        "--loglevel=INFO",
+        "--concurrency=2",
+      ]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      CLOUDWISE_ENVIRONMENT: ${CLOUDWISE_ENVIRONMENT:-local}
+      CLOUDWISE_DATABASE_URL: ${CLOUDWISE_DATABASE_URL:-postgresql+asyncpg://cloudwise:cloudwise@postgres:5432/cloudwise}
+      CLOUDWISE_REDIS_URL: ${CLOUDWISE_REDIS_URL:-redis://redis:6379/0}
+      CLOUDWISE_CORS_ORIGINS: ${CLOUDWISE_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A cloudwise.worker:celery_app inspect ping -d celery@$${HOSTNAME} --timeout=5 | grep -q pong",
+        ]
+      interval: 15s
+      timeout: 8s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      target: development
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5173:5173"
+    profiles: ["dev"]
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres-data:
+  redis-data:

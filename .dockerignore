@@ -1,0 +1,15 @@
+.git
+.github
+.env
+.env.*
+.terraform
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.venv
+**/node_modules
+**/dist
+**/coverage
+*.tfstate*
+

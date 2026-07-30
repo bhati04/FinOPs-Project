@@ -1,0 +1,31 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+
+# JavaScript
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Infrastructure and tooling
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
