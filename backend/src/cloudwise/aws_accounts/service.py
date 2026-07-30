@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cloudwise.aws_accounts.encryption import ExternalIdCipher
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
-from cloudwise.aws_accounts.provider import AWSProvider
+from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.aws_accounts.schemas import (
     AWSIdentityResponse,
     ConnectionCreateRequest,

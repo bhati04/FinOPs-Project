@@ -1,7 +1,6 @@
 """AWS account and EC2 inventory HTTP routes."""
 
 from typing import Annotated
-
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -14,9 +13,7 @@ from cloudwise.aws_accounts.schemas import (
     ConnectionResponse,
     EC2InventoryResponse,
 )
-from cloudwise.aws_accounts.service import (
-    AWSAccountService,
-)
+from cloudwise.aws_accounts.service import AWSAccountService
 from cloudwise.core.config import get_settings
 from cloudwise.core.database import get_db_session
 from cloudwise.identity.dependencies import CurrentUser
