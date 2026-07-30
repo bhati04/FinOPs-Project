@@ -31,6 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { logout } from "../identity/api";
 import { clearSession } from "../identity/session";
 import { getAwsIdentity, getEc2Inventory } from "./api";
 
@@ -48,6 +49,15 @@ export function AwsAccountPage() {
     queryFn: ({ signal }) => getEc2Inventory(region, signal),
   });
   const error = identity.error ?? inventory.error;
+
+  async function signOut() {
+    try {
+      await logout();
+    } finally {
+      clearSession();
+      void navigate("/login", { replace: true });
+    }
+  }
 
   return (
     <Box component="main" className="app-shell">
@@ -96,8 +106,7 @@ export function AwsAccountPage() {
               <Button
                 color="inherit"
                 onClick={() => {
-                  clearSession();
-                  void navigate("/login", { replace: true });
+                  void signOut();
                 }}
               >
                 Sign out

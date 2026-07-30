@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { runtimeConfig } from "../../lib/config";
-import type { AuthTokens } from "./session";
+import { getRefreshToken, type AuthTokens } from "./session";
 
 const tokenSchema = z.object({
   access_token: z.string().min(1),
@@ -51,4 +51,22 @@ export function register(
     password,
     organization_name: organizationName,
   });
+}
+
+export async function logout() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return;
+  }
+  const response = await fetch(runtimeConfig.apiBaseUrl + "/auth/logout", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!response.ok && response.status !== 401) {
+    throw new Error("The server session could not be revoked.");
+  }
 }
