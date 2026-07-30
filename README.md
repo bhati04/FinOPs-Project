@@ -52,6 +52,12 @@ For frontend hot reload, run the development profile:
 docker compose --profile dev up --build frontend-dev
 ```
 
+## Brand assets
+
+Browser icons live in `frontend/public/`. The favicon uses the CloudWise
+navy-and-mint cloud insight mark, with PNG variants for browsers and Apple
+devices plus an ICO fallback.
+
 ## Validation
 
 ```bash
