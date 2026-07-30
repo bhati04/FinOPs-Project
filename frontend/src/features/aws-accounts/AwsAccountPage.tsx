@@ -29,14 +29,16 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
+import { clearSession } from "../identity/session";
 import { getAwsIdentity, getEc2Inventory } from "./api";
 
 const regions = ["us-east-1", "us-west-2", "eu-west-1", "ap-south-1"];
 
 export function AwsAccountPage() {
   const [region, setRegion] = useState("us-east-1");
+  const navigate = useNavigate();
   const identity = useQuery({
     queryKey: ["aws-identity", region],
     queryFn: ({ signal }) => getAwsIdentity(region, signal),
@@ -90,6 +92,15 @@ export function AwsAccountPage() {
               </FormControl>
               <Button component={Link} to="/" variant="outlined">
                 Platform
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => {
+                  clearSession();
+                  void navigate("/login", { replace: true });
+                }}
+              >
+                Sign out
               </Button>
             </Stack>
           </Stack>

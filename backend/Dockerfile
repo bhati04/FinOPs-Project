@@ -13,6 +13,8 @@ RUN groupadd --gid 10001 cloudwise \
 
 COPY pyproject.toml README.md ./
 COPY src ./src
+COPY alembic.ini ./
+COPY alembic ./alembic
 RUN python -m pip install --upgrade pip \
     && python -m pip install .
 

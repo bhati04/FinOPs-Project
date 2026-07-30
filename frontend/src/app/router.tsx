@@ -1,11 +1,21 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import { AwsAccountPage } from "../features/aws-accounts/AwsAccountPage";
+import { LoginPage } from "../features/identity/LoginPage";
+import { RequireAuth } from "../features/identity/RequireAuth";
 import { FoundationPage } from "../features/platform-health/FoundationPage";
 import { NotFoundPage } from "./NotFoundPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <FoundationPage /> },
-  { path: "/aws-account", element: <AwsAccountPage /> },
+  { path: "/login", element: <LoginPage /> },
+  {
+    path: "/aws-account",
+    element: (
+      <RequireAuth>
+        <AwsAccountPage />
+      </RequireAuth>
+    ),
+  },
   { path: "*", element: <NotFoundPage /> },
 ]);

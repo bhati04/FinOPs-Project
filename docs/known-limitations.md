@@ -1,7 +1,11 @@
 # Known limitations
 
-- Milestone 0 provides no authentication, RBAC, or tenant data.
-- No AWS account can be connected.
+- Milestone 1 currently provides registration, login, rotating refresh
+  sessions, an initial organization owner role, and protected current-role AWS
+  visibility. Password recovery, team management, rate limiting, and
+  multi-organization switching are not implemented.
+- Customer AWS accounts cannot yet be connected; the current AWS view uses the
+  platform compute role only.
 - No resources, costs, metrics, recommendations, reports, notifications, or
   audit events are collected.
 - Compose checks worker health through Celery control ping, but the public

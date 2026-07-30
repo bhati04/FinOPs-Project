@@ -2,8 +2,9 @@
 
 CloudWise is a production-oriented foundation for secure, explainable,
 multi-account AWS cost visibility and governance. The current repository
-implements **Milestone 0 only**: local runtime, service health, developer
-tooling, CI, infrastructure boundaries, and architectural documentation.
+implements Milestone 0 plus the first Milestone 1 identity slice: local runtime,
+service health, organization-scoped users, rotating sessions, and protected AWS
+account visibility.
 
 > No authentication, customer AWS access, inventory collection, cost analysis,
 > recommendations, or automated remediation is implemented yet.
@@ -80,7 +81,7 @@ For the complete EC2 deployment and product-readiness checklist, see
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | 0 | Repository, containers, health, CI, docs | Implemented |
-| 1 | Identity, organizations, RBAC, tenant isolation | Not started |
+| 1 | Identity, organizations, RBAC, tenant isolation | In progress |
 | 2 | Secure AWS account onboarding | Not started |
 | 3 | Mock inventory and scan orchestration | Not started |
 | 4 | Real AWS inventory | Not started |

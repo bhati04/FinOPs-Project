@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field, RedisDsn, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, RedisDsn, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     redis_url: RedisDsn = RedisDsn("redis://redis:6379/0")
     cors_origins: list[AnyHttpUrl] = [AnyHttpUrl("http://localhost:5173")]
     api_request_max_bytes: int = Field(default=1_048_576, ge=1_024, le=10_485_760)
+    auth_secret_key: SecretStr = SecretStr(
+        "local-only-change-before-production-0123456789abcdef0123456789abcdef"
+    )
+    access_token_minutes: int = Field(default=15, ge=5, le=60)
+    refresh_token_days: int = Field(default=7, ge=1, le=30)
     ai_advisor_enabled: bool = False
     ai_advisor_provider: Literal["bedrock"] = "bedrock"
     ai_advisor_model_id: str | None = None
@@ -51,6 +56,10 @@ class Settings(BaseSettings):
         """Require an explicit model only when advisory generation is enabled."""
         if self.ai_advisor_enabled and not self.ai_advisor_model_id:
             raise ValueError("ai_advisor_model_id is required when AI advisory is enabled")
+        if self.environment == "production" and self.auth_secret_key.get_secret_value().startswith(
+            "local-only-"
+        ):
+            raise ValueError("auth_secret_key must be replaced in production")
         return self
 
 

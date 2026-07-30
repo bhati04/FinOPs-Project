@@ -13,6 +13,7 @@ from cloudwise.aws_accounts.service import (
     AWSAccountService,
     get_aws_account_service,
 )
+from cloudwise.identity.dependencies import CurrentUser
 
 router = APIRouter()
 
@@ -24,6 +25,7 @@ router = APIRouter()
     responses={503: {"description": "AWS credentials or identity service unavailable"}},
 )
 def get_current_identity(
+    _current_user: CurrentUser,
     service: Annotated[
         AWSAccountService,
         Depends(get_aws_account_service),
@@ -57,6 +59,7 @@ def get_current_identity(
     responses={503: {"description": "EC2 inventory could not be retrieved"}},
 )
 def get_ec2_inventory(
+    _current_user: CurrentUser,
     service: Annotated[
         AWSAccountService,
         Depends(get_aws_account_service),

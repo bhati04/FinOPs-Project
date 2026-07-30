@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { runtimeConfig } from "../../lib/config";
+import { getAccessToken } from "../identity/session";
 
 const identitySchema = z.object({
   account_id: z.string().regex(/^\d{12}$/),
@@ -40,7 +41,10 @@ async function getJson<T>(
 ): Promise<T> {
   const response = await fetch(url, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${getAccessToken() ?? ""}`,
+    },
     signal,
   });
   const body: unknown = await response.json();
