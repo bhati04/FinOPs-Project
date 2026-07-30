@@ -1,5 +1,6 @@
 """Public identity API schemas."""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -52,7 +53,7 @@ class TokenResponse(BaseModel):
 
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: Literal["bearer"] = "bearer"  # noqa: S105 - OAuth token type, not a secret
     expires_in: int
 
 

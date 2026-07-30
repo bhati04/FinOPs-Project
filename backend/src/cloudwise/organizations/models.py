@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, UniqueConstraint
@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from cloudwise.core.database import Base
 
 
-class OrganizationRole(str, enum.Enum):
+class OrganizationRole(StrEnum):
     """Organization authorization roles."""
 
     OWNER = "owner"
