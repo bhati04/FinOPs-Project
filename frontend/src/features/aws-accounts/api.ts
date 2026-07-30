@@ -41,9 +41,36 @@ const connectionSchema = z.object({
   verified_at: z.string().datetime().nullable().optional(),
 });
 
+const scanSchema = z.object({
+  id: z.string().uuid(),
+  connection_id: z.string().uuid(),
+  region: z.string(),
+  status: z.enum(["queued", "running", "completed", "partial", "failed"]),
+  resource_count: z.number().int().nonnegative(),
+  error_code: z.string().nullable(),
+  created_at: z.string().datetime(),
+  started_at: z.string().datetime().nullable(),
+  completed_at: z.string().datetime().nullable(),
+});
+
+const persistedResourceSchema = z.object({
+  id: z.string().uuid(),
+  connection_id: z.string().uuid(),
+  scan_id: z.string().uuid(),
+  region: z.string(),
+  resource_type: z.string(),
+  resource_id: z.string(),
+  name: z.string(),
+  state: z.string(),
+  details: z.record(z.string(), z.unknown()),
+  discovered_at: z.string().datetime(),
+});
+
 export type AwsIdentity = z.infer<typeof identitySchema>;
 export type Ec2Inventory = z.infer<typeof inventorySchema>;
 export type AwsConnection = z.infer<typeof connectionSchema>;
+export type InventoryScan = z.infer<typeof scanSchema>;
+export type PersistedResource = z.infer<typeof persistedResourceSchema>;
 
 async function getJson<T>(
   url: string,
@@ -136,4 +163,38 @@ export async function verifyConnection(id: string, region: string) {
   const payload: unknown = await response.json();
   if (!response.ok) throw new Error("AWS could not verify the customer role.");
   return connectionSchema.parse(payload);
+}
+
+export async function startInventoryScan(id: string, region: string) {
+  const response = await fetch(
+    runtimeConfig.apiBaseUrl +
+      "/aws-accounts/connections/" +
+      encodeURIComponent(id) +
+      "/scans?region=" +
+      encodeURIComponent(region),
+    { method: "POST", headers: authorizationHeaders() },
+  );
+  const payload: unknown = await response.json();
+  if (!response.ok) {
+    throw new Error("The inventory scan could not be started.");
+  }
+  return scanSchema.parse(payload);
+}
+
+export function listInventoryScans(signal?: AbortSignal) {
+  return getJson(
+    runtimeConfig.apiBaseUrl + "/scans",
+    z.array(scanSchema),
+    signal,
+  );
+}
+
+export function listPersistedResources(region: string, signal?: AbortSignal) {
+  return getJson(
+    runtimeConfig.apiBaseUrl +
+      "/inventory/resources?region=" +
+      encodeURIComponent(region),
+    z.array(persistedResourceSchema),
+    signal,
+  );
 }

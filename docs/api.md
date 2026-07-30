@@ -39,3 +39,21 @@ digests and can be revoked through `POST /api/v1/auth/logout`.
 `Authorization: Bearer <access-token>` header. The access token carries the
 user, organization, and role identifiers; the API also verifies that the
 membership remains active in PostgreSQL before authorizing a request.
+
+## Inventory scan endpoints
+
+`POST /api/v1/aws-accounts/connections/{connection_id}/scans?region=us-east-1`
+queues a read-only EC2 inventory scan for a verified connection. Owners,
+administrators, and analysts may start scans. Only one queued or running scan
+is allowed per connection.
+
+`GET /api/v1/scans` returns the authenticated organization's scan history.
+An optional `connection_id` query parameter filters the result.
+
+`GET /api/v1/inventory/resources?region=us-east-1` returns normalized,
+persisted resources for the authenticated organization. An optional
+`connection_id` query parameter narrows the result.
+
+The Celery worker assumes the verified customer role with its encrypted
+External ID, uses only short-lived STS credentials, and records safe error
+codes rather than AWS credentials or environment values.

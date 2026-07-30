@@ -11,6 +11,7 @@ from cloudwise.core.config import get_settings
 from cloudwise.core.database import Base
 from cloudwise.identity import models as identity_models  # noqa: F401
 from cloudwise.organizations import models as organization_models  # noqa: F401
+from cloudwise.scans import models as scan_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

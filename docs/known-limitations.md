@@ -1,16 +1,15 @@
 # Known limitations
 
-- Milestone 1 currently provides registration, login, rotating refresh
-  sessions, an initial organization owner role, and protected current-role AWS
-  visibility. Password recovery, team management, rate limiting, and
-  multi-organization switching are not implemented.
-- Customer AWS accounts cannot yet be connected; the current AWS view uses the
-  platform compute role only.
-- No resources, costs, metrics, recommendations, reports, notifications, or
-  audit events are collected.
+- Registration, login, rotating refresh sessions, an initial organization
+  owner role, and protected AWS views are implemented. Password recovery, team
+  management, rate limiting, and multi-organization switching are not.
+- Customer roles can be verified and scanned. Inventory currently covers EC2
+  in one selected Region per scan; multi-Region scheduling and other AWS
+  resource types are not implemented.
+- No costs, metrics, recommendations, reports, notifications, or audit events
+  are collected.
 - Compose checks worker health through Celery control ping, but the public
-  readiness API does not expose worker status. A scalable heartbeat-backed API
-  check is deferred until job orchestration.
+  readiness API does not yet expose worker status.
 - Local PostgreSQL and Redis credentials are intentionally simple and must not
   be used outside local development.
 - Terraform defines validation and naming contracts only; it provisions no

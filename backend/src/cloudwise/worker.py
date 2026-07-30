@@ -9,6 +9,7 @@ celery_app = Celery(
     "cloudwise",
     broker=str(settings.redis_url),
     backend=str(settings.redis_url),
+    include=["cloudwise.scans.tasks"],
 )
 celery_app.conf.update(
     task_serializer="json",

@@ -24,9 +24,36 @@ class AWSProviderError(RuntimeError):
 class AWSProvider:
     """Access AWS using the default Boto3 credential chain."""
 
-    def __init__(self, region: str) -> None:
+    def __init__(self, region: str, session: Any | None = None) -> None:
         self.region = region
-        self.session = boto3.Session(region_name=region)
+        self.session = session or boto3.Session(region_name=region)
+
+    @classmethod
+    def for_assumed_role(
+        cls,
+        role_arn: str,
+        external_id: str,
+        region: str,
+    ) -> "AWSProvider":
+        """Create a provider backed by short-lived customer-role credentials."""
+        try:
+            sts = boto3.client("sts", region_name=region, config=AWS_CLIENT_CONFIG)
+            assumed = sts.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName="cloudwise-inventory-scan",
+                ExternalId=external_id,
+                DurationSeconds=900,
+            )
+            credentials = assumed["Credentials"]
+            session = boto3.Session(
+                region_name=region,
+                aws_access_key_id=credentials["AccessKeyId"],
+                aws_secret_access_key=credentials["SecretAccessKey"],
+                aws_session_token=credentials["SessionToken"],
+            )
+            return cls(region=region, session=session)
+        except (ClientError, BotoCoreError, KeyError) as exc:
+            raise AWSProviderError("Unable to assume the customer AWS role") from exc
 
     def get_identity(self) -> dict[str, str]:
         """Return the current AWS account and principal identity."""

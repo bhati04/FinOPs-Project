@@ -2,15 +2,13 @@
 
 CloudWise is a production-oriented foundation for secure, explainable,
 multi-account AWS cost visibility and governance. The current repository
-implements Milestone 0 plus the first Milestone 1 identity slice: local runtime,
-service health, organization-scoped users, rotating sessions, and protected AWS
-account visibility.
+implements the platform foundation, organization-scoped identity, secure AWS
+role onboarding, and asynchronous read-only EC2 inventory scans.
 
-> No authentication, customer AWS access, inventory collection, cost analysis,
-> recommendations, or automated remediation is implemented yet.
-> A disabled, unexposed AI-advisor provider foundation exists for a future
-> user-clicked recommendation explanation; it does not generate recommendations
-> or call a model during the current milestone.
+> Cost analysis, recommendation rules, reports, and automated remediation are
+> not implemented yet. A disabled, unexposed AI-advisor provider foundation
+> exists for a future user-clicked recommendation explanation; it does not call
+> a model during scans or page loads.
 
 ## Architecture at a glance
 
@@ -81,13 +79,13 @@ For the complete EC2 deployment and product-readiness checklist, see
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | 0 | Repository, containers, health, CI, docs | Implemented |
-| 1 | Identity, organizations, RBAC, tenant isolation | In progress |
-| 2 | Secure AWS account onboarding | Not started |
-| 3 | Mock inventory and scan orchestration | Not started |
-| 4 | Real AWS inventory | Not started |
+| 1 | Identity, organizations, RBAC, tenant isolation | Implemented |
+| 2 | Secure AWS account onboarding | Implemented |
+| 3 | Inventory persistence and scan orchestration | Implemented |
+| 4 | Broader real AWS inventory | In progress: EC2, one Region per scan |
 | 5 | Cost and metrics | Not started |
 | 6 | Recommendation engine | Not started |
 | 7 | Reports, notifications, and audit | Not started |
 | 8 | Production hardening and deployment | Not started |
 
-Review and approval are required before beginning the next milestone.
+Each later milestone still requires review before its scope is expanded.

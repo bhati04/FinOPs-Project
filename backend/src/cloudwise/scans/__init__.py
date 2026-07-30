@@ -1,0 +1,1 @@
+"""Inventory scan orchestration domain."""

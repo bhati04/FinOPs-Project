@@ -1,7 +1,8 @@
 # Testing
 
-Milestone 0 tests focus on configuration, health contracts, middleware safety,
-dependency failure behavior, UI response validation, and production builds.
+Tests cover configuration, health contracts, authentication security,
+organization boundaries, AWS provider responses, inventory normalization,
+middleware safety, and production builds.
 
 ## Backend
 
@@ -25,7 +26,6 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Later milestones must add PostgreSQL and Redis integration tests, migration
-tests, tenant-isolation tests, AWS Stubber and moto tests, Celery task tests,
-contract tests, and mock-mode end-to-end workflows.
-
+Before a production release, add full PostgreSQL/Redis integration tests, AWS
+Stubber task tests, migration round-trip tests, and a mock-mode end-to-end scan
+workflow in addition to these unit and contract checks.

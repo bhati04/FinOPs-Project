@@ -11,10 +11,17 @@
 
 Connection strings and underlying exception messages never leave the backend.
 
-## Future AWS scan boundary
+## AWS scan boundary
 
-Future scans will resolve the organization and account connection, acquire a
-per-account lock, request an STS session, call AWS through a provider interface,
-normalize and validate results, and persist organization-scoped records. Raw
-credentials and session tokens must never enter logs or storage.
+1. An owner, administrator, or analyst requests a scan for a verified
+   organization-scoped connection.
+2. FastAPI persists a queued scan and sends only its UUID to Celery.
+3. The worker acquires a per-connection Redis lock and decrypts the External ID
+   in memory.
+4. STS returns short-lived role credentials, and the provider paginates EC2 in
+   the selected Region.
+5. The worker normalizes and upserts tenant-scoped resources, removes stale EC2
+   records for that connection and Region, and completes the scan.
 
+Raw credentials, session tokens, External IDs, and environment values never
+enter logs or persistent scan records.

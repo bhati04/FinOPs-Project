@@ -6,13 +6,26 @@ import {
   Chip,
   Grid,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { createConnection, listConnections, verifyConnection } from "./api";
+import {
+  createConnection,
+  listConnections,
+  listInventoryScans,
+  listPersistedResources,
+  startInventoryScan,
+  verifyConnection,
+} from "./api";
 
 export function ConnectionOnboarding({ region }: { region: string }) {
   const [alias, setAlias] = useState("");
@@ -23,6 +36,21 @@ export function ConnectionOnboarding({ region }: { region: string }) {
   const connections = useQuery({
     queryKey: ["aws-connections"],
     queryFn: ({ signal }) => listConnections(signal),
+  });
+  const scans = useQuery({
+    queryKey: ["inventory-scans"],
+    queryFn: ({ signal }) => listInventoryScans(signal),
+    refetchInterval: (query) =>
+      query.state.data?.some(
+        (scan) => scan.status === "queued" || scan.status === "running",
+      )
+        ? 3000
+        : false,
+  });
+  const persistedResources = useQuery({
+    queryKey: ["persisted-resources", region],
+    queryFn: ({ signal }) => listPersistedResources(region, signal),
+    refetchInterval: 5000,
   });
   const create = useMutation({
     mutationFn: createConnection,
@@ -37,7 +65,29 @@ export function ConnectionOnboarding({ region }: { region: string }) {
       await queryClient.invalidateQueries({ queryKey: ["aws-connections"] });
     },
   });
-  const error = create.error ?? verify.error ?? connections.error;
+  const startScan = useMutation({
+    mutationFn: (id: string) => startInventoryScan(id, region),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["inventory-scans"] });
+    },
+  });
+  const error =
+    create.error ??
+    verify.error ??
+    startScan.error ??
+    connections.error ??
+    scans.error ??
+    persistedResources.error;
+
+  const scanByConnection = new Map<
+    string,
+    NonNullable<typeof scans.data>[number]
+  >();
+  for (const scan of scans.data ?? []) {
+    if (!scanByConnection.has(scan.connection_id)) {
+      scanByConnection.set(scan.connection_id, scan);
+    }
+  }
 
   return (
     <Stack spacing={2}>
@@ -142,11 +192,131 @@ export function ConnectionOnboarding({ region }: { region: string }) {
                     Verify role
                   </Button>
                 )}
+                {connection.status === "verified" && (
+                  <Button
+                    variant="contained"
+                    disabled={
+                      startScan.isPending ||
+                      ["queued", "running"].includes(
+                        scanByConnection.get(connection.id)?.status ?? "",
+                      )
+                    }
+                    onClick={() => startScan.mutate(connection.id)}
+                  >
+                    {["queued", "running"].includes(
+                      scanByConnection.get(connection.id)?.status ?? "",
+                    )
+                      ? "Scan running"
+                      : "Scan EC2"}
+                  </Button>
+                )}
               </Stack>
             </Stack>
           </CardContent>
         </Card>
       ))}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" mb={2}>
+            Inventory scan history
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Connection</TableCell>
+                  <TableCell>Region</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Resources</TableCell>
+                  <TableCell>Started</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {scans.data?.map((scan) => (
+                  <TableRow key={scan.id}>
+                    <TableCell>
+                      {connections.data?.find(
+                        (connection) => connection.id === scan.connection_id,
+                      )?.alias ?? "Connection"}
+                    </TableCell>
+                    <TableCell>{scan.region}</TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={scan.status}
+                        color={
+                          scan.status === "completed"
+                            ? "success"
+                            : scan.status === "failed"
+                              ? "error"
+                              : "warning"
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>{scan.resource_count}</TableCell>
+                    <TableCell>
+                      {new Date(scan.created_at).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {scans.data?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      No persisted scans yet. Start one from a verified
+                      connection.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent>
+          <Typography variant="h6" mb={2}>
+            Persisted EC2 inventory
+          </Typography>
+          <Typography color="text.secondary" mb={2}>
+            {persistedResources.data?.length ?? 0} resources stored for {region}
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Resource ID</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>State</TableCell>
+                  <TableCell>Discovered</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {persistedResources.data?.map((resource) => (
+                  <TableRow key={resource.id}>
+                    <TableCell>{resource.name || "Unnamed"}</TableCell>
+                    <TableCell sx={{ fontFamily: "monospace" }}>
+                      {resource.resource_id}
+                    </TableCell>
+                    <TableCell>{resource.resource_type}</TableCell>
+                    <TableCell>{resource.state}</TableCell>
+                    <TableCell>
+                      {new Date(resource.discovered_at).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {persistedResources.data?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      No persisted EC2 resources in this region.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
     </Stack>
   );
 }
