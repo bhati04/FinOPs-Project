@@ -17,6 +17,8 @@ from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
 from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.core.config import get_settings
 from cloudwise.core.database import get_session_factory
+from cloudwise.identity import models as identity_models  # noqa: F401
+from cloudwise.organizations import models as organization_models  # noqa: F401
 from cloudwise.scans.models import InventoryResource, InventoryScan, ScanStatus
 from cloudwise.worker import celery_app
 

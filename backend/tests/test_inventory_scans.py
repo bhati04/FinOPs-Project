@@ -8,9 +8,17 @@ from uuid import uuid4
 import pytest
 
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
+from cloudwise.core.database import Base
 from cloudwise.scans.models import InventoryScan, ScanStatus
 from cloudwise.scans.service import InventoryScanService
 from cloudwise.scans.tasks import _resource_values
+
+
+def test_worker_model_metadata_resolves_foreign_keys() -> None:
+    """The standalone worker must load every table referenced by scan models."""
+    for table in Base.metadata.sorted_tables:
+        for foreign_key in table.foreign_keys:
+            assert foreign_key.column is not None
 
 
 async def test_start_scan_rejects_connection_outside_organization() -> None:
