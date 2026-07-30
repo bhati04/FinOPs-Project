@@ -40,7 +40,7 @@
     "audit-ci": "^7.1.0",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.0.0",
-    "eslint-plugin-react-refresh": "^0.4.18",
+    "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^16.0.0",
     "jsdom": "^26.0.0",
     "prettier": "^3.5.0",
