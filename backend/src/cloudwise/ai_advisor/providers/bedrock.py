@@ -99,4 +99,7 @@ class BedrockAdvisoryProvider:
             raise AiAdvisorOutputError("Bedrock response did not contain text output") from exc
         if len(text_blocks) != 1:
             raise AiAdvisorOutputError("Bedrock response must contain exactly one text block")
-        return text_blocks[0]
+        text_block = text_blocks[0]
+        if not isinstance(text_block, str):
+            raise AiAdvisorOutputError("Bedrock response text was not a string")
+        return text_block

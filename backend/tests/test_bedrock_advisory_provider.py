@@ -16,9 +16,11 @@ class FakeBedrockClient:
 
     def converse(self, **kwargs: Any) -> dict[str, Any]:
         self.request = kwargs
-        payload = suggestion().model_copy(
-            update={"disclaimer": ADVISORY_DISCLAIMER}
-        ).model_dump(mode="json")
+        payload = (
+            suggestion()
+            .model_copy(update={"disclaimer": ADVISORY_DISCLAIMER})
+            .model_dump(mode="json")
+        )
         return {
             "output": {
                 "message": {
