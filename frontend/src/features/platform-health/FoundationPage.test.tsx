@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import { AppThemeProvider } from "../../app/AppThemeProvider";
 import { FoundationPage } from "./FoundationPage";
@@ -9,11 +10,13 @@ function renderPage() {
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <AppThemeProvider>
-      <QueryClientProvider client={client}>
-        <FoundationPage />
-      </QueryClientProvider>
-    </AppThemeProvider>,
+    <MemoryRouter>
+      <AppThemeProvider>
+        <QueryClientProvider client={client}>
+          <FoundationPage />
+        </QueryClientProvider>
+      </AppThemeProvider>
+    </MemoryRouter>,
   );
 }
 

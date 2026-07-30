@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { getReadiness } from "./api";
 
@@ -71,12 +72,22 @@ export function FoundationPage() {
                 CloudWise
               </Typography>
             </Stack>
-            <Chip
-              label="Foundation · M0"
-              size="small"
-              variant="outlined"
-              sx={{ borderColor: "rgba(89, 214, 194, .35)" }}
-            />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                label="Foundation · M0"
+                size="small"
+                variant="outlined"
+                sx={{ borderColor: "rgba(89, 214, 194, .35)" }}
+              />
+              <Button
+                component={Link}
+                to="/aws-account"
+                size="small"
+                variant="outlined"
+              >
+                AWS account
+              </Button>
+            </Stack>
           </Stack>
 
           <Grid container spacing={4} alignItems="center">
