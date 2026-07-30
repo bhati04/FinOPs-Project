@@ -86,3 +86,32 @@ class AWSProvider:
             raise AWSProviderError(
                 f"Unable to retrieve EC2 inventory from Region {self.region}"
             ) from exc
+
+    @staticmethod
+    def verify_assumable_role(
+        role_arn: str,
+        external_id: str,
+        region: str,
+    ) -> dict[str, str]:
+        """Assume a customer role and return its verified identity."""
+        try:
+            sts = boto3.client("sts", region_name=region, config=AWS_CLIENT_CONFIG)
+            assumed = sts.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName="cloudwise-verification",
+                ExternalId=external_id,
+                DurationSeconds=900,
+            )
+            credentials = assumed["Credentials"]
+            customer_sts = boto3.client(
+                "sts",
+                region_name=region,
+                aws_access_key_id=credentials["AccessKeyId"],
+                aws_secret_access_key=credentials["SecretAccessKey"],
+                aws_session_token=credentials["SessionToken"],
+                config=AWS_CLIENT_CONFIG,
+            )
+            identity = customer_sts.get_caller_identity()
+            return {"account_id": identity["Account"], "arn": identity["Arn"]}
+        except (ClientError, BotoCoreError, KeyError) as exc:
+            raise AWSProviderError("Unable to verify the customer AWS role") from exc

@@ -6,6 +6,7 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from cloudwise.aws_accounts import models as aws_account_models  # noqa: F401
 from cloudwise.core.config import get_settings
 from cloudwise.core.database import Base
 from cloudwise.identity import models as identity_models  # noqa: F401

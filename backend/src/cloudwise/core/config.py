@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     )
     access_token_minutes: int = Field(default=15, ge=5, le=60)
     refresh_token_days: int = Field(default=7, ge=1, le=30)
+    external_id_encryption_key: SecretStr = SecretStr(
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    )
     ai_advisor_enabled: bool = False
     ai_advisor_provider: Literal["bedrock"] = "bedrock"
     ai_advisor_model_id: str | None = None
@@ -60,6 +63,12 @@ class Settings(BaseSettings):
             "local-only-"
         ):
             raise ValueError("auth_secret_key must be replaced in production")
+        if (
+            self.environment == "production"
+            and self.external_id_encryption_key.get_secret_value()
+            == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        ):
+            raise ValueError("external_id_encryption_key must be replaced in production")
         return self
 
 
