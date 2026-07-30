@@ -31,8 +31,19 @@ const inventorySchema = z.object({
   ),
 });
 
+const connectionSchema = z.object({
+  id: z.string().uuid(),
+  alias: z.string(),
+  expected_account_id: z.string().regex(/^\d{12}$/),
+  role_arn: z.string(),
+  status: z.enum(["pending", "verified", "failed"]),
+  external_id: z.string().nullable().optional(),
+  verified_at: z.string().datetime().nullable().optional(),
+});
+
 export type AwsIdentity = z.infer<typeof identitySchema>;
 export type Ec2Inventory = z.infer<typeof inventorySchema>;
+export type AwsConnection = z.infer<typeof connectionSchema>;
 
 async function getJson<T>(
   url: string,
@@ -76,4 +87,53 @@ export function getEc2Inventory(region: string, signal?: AbortSignal) {
     inventorySchema,
     signal,
   );
+}
+
+function authorizationHeaders() {
+  return {
+    Accept: "application/json",
+    Authorization: `Bearer ${getAccessToken() ?? ""}`,
+    "Content-Type": "application/json",
+  };
+}
+
+export async function listConnections(signal?: AbortSignal) {
+  return getJson(
+    runtimeConfig.apiBaseUrl + "/aws-accounts/connections",
+    z.array(connectionSchema),
+    signal,
+  );
+}
+
+export async function createConnection(input: {
+  alias: string;
+  expected_account_id: string;
+  role_arn: string;
+}) {
+  const response = await fetch(
+    runtimeConfig.apiBaseUrl + "/aws-accounts/connections",
+    {
+      method: "POST",
+      headers: authorizationHeaders(),
+      body: JSON.stringify(input),
+    },
+  );
+  const payload: unknown = await response.json();
+  if (!response.ok)
+    throw new Error("The AWS connection draft could not be created.");
+  return connectionSchema.parse(payload);
+}
+
+export async function verifyConnection(id: string, region: string) {
+  const response = await fetch(
+    runtimeConfig.apiBaseUrl +
+      "/aws-accounts/connections/" +
+      encodeURIComponent(id) +
+      "/verify?region=" +
+      encodeURIComponent(region),
+    { method: "POST", headers: authorizationHeaders() },
+  );
+  const payload: unknown = await response.json();
+  if (!response.ok) throw new Error("AWS could not verify the customer role.");
+  return connectionSchema.parse(payload);
 }

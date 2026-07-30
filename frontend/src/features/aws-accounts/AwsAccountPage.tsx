@@ -33,6 +33,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { logout } from "../identity/api";
 import { clearSession } from "../identity/session";
+import { ConnectionOnboarding } from "./ConnectionOnboarding";
 import { getAwsIdentity, getEc2Inventory } from "./api";
 
 const regions = ["us-east-1", "us-west-2", "eu-west-1", "ap-south-1"];
@@ -262,6 +263,7 @@ export function AwsAccountPage() {
               </TableContainer>
             </CardContent>
           </Card>
+          <ConnectionOnboarding region={region} />
         </Stack>
       </Container>
     </Box>
