@@ -18,3 +18,42 @@ External IDs are encrypted with
 `CLOUDWISE_EXTERNAL_ID_ENCRYPTION_KEY`. The platform role also needs an
 identity policy allowing `sts:AssumeRole` only for approved customer-role ARNs.
 Long-lived customer AWS keys remain forbidden.
+
+## Milestone 4 inventory policy
+
+The customer-managed role needs only read actions used by the selected-Region
+inventory scan:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudWiseInventoryRead",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeAddresses",
+        "ec2:DescribeInstances",
+        "ec2:DescribeNatGateways",
+        "ec2:DescribeSnapshots",
+        "ec2:DescribeVolumes",
+        "rds:DescribeDBInstances",
+        "lambda:ListFunctions",
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "ecs:ListClusters",
+        "ecs:DescribeClusters",
+        "eks:ListClusters",
+        "eks:DescribeCluster",
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+CloudWise runs collectors independently. Missing permissions produce a
+`partial` scan and a safe list of affected service names; successfully queried
+services are still persisted. No action in this policy modifies a customer
+resource.

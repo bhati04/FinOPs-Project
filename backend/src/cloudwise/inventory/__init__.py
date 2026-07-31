@@ -1,0 +1,1 @@
+"""Normalized AWS inventory domain."""

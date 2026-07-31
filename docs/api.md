@@ -43,17 +43,23 @@ membership remains active in PostgreSQL before authorizing a request.
 ## Inventory scan endpoints
 
 `POST /api/v1/aws-accounts/connections/{connection_id}/scans?region=us-east-1`
-queues a read-only EC2 inventory scan for a verified connection. Owners,
+queues a read-only AWS inventory scan for a verified connection. Owners,
 administrators, and analysts may start scans. Only one queued or running scan
-is allowed per connection.
+is allowed per connection. The selected-Region collectors cover EC2 instances,
+EBS volumes and snapshots, Elastic IPs, NAT gateways, RDS instances, Lambda
+functions, load balancers, ECS and EKS clusters, and S3 buckets.
 
 `GET /api/v1/scans` returns the authenticated organization's scan history.
 An optional `connection_id` query parameter filters the result.
 
-`GET /api/v1/inventory/resources?region=us-east-1` returns normalized,
-persisted resources for the authenticated organization. An optional
-`connection_id` query parameter narrows the result.
+`GET /api/v1/inventory/resources?region=us-east-1` returns active normalized
+resources for the authenticated organization. An optional `connection_id`
+query parameter narrows the result. Set `include_inactive=true` to include
+previously discovered resources that disappeared from a later successful
+service scan.
 
 The Celery worker assumes the verified customer role with its encrypted
 External ID, uses only short-lived STS credentials, and records safe error
-codes rather than AWS credentials or environment values.
+codes rather than AWS credentials or environment values. A scan is `partial`
+when one or more service collectors are denied or unavailable; its
+`failed_services` field lists safe service labels.

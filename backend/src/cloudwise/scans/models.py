@@ -5,6 +5,7 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Enum,
     ForeignKey,
@@ -53,6 +54,7 @@ class InventoryScan(Base):
     status: Mapped[ScanStatus] = mapped_column(Enum(ScanStatus, name="inventory_scan_status"))
     resource_count: Mapped[int] = mapped_column(default=0)
     error_code: Mapped[str | None] = mapped_column(String(80))
+    failed_services: Mapped[list[str]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -90,3 +92,6 @@ class InventoryResource(Base):
     state: Mapped[str] = mapped_column(String(80))
     details: Mapped[dict[str, object]] = mapped_column(JSON)
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    inactive_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

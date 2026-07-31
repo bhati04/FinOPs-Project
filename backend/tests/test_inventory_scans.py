@@ -63,20 +63,23 @@ def test_resource_values_are_json_safe_and_tenant_scoped() -> None:
     values = _resource_values(
         scan,
         {
+            "resource_type": "ec2_instance",
             "resource_id": "i-example",
             "name": "worker",
-            "instance_type": "t3.micro",
             "state": "running",
-            "availability_zone": "us-east-1a",
-            "private_ip": "10.0.0.4",
-            "public_ip": None,
-            "launch_time": launch_time,
-            "tags": {"Environment": "test"},
+            "region": "us-east-1",
+            "details": {
+                "instance_type": "t3.micro",
+                "availability_zone": "us-east-1a",
+                "launch_time": launch_time.isoformat(),
+            },
         },
         launch_time,
     )
 
     assert values["organization_id"] == organization_id
     assert values["connection_id"] == connection_id
+    assert values["resource_type"] == "ec2_instance"
+    assert values["is_active"] is True
     details = cast(dict[str, object], values["details"])
     assert details["launch_time"] == launch_time.isoformat()

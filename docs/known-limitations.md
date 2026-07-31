@@ -3,9 +3,10 @@
 - Registration, login, rotating refresh sessions, an initial organization
   owner role, and protected AWS views are implemented. Password recovery, team
   management, rate limiting, and multi-organization switching are not.
-- Customer roles can be verified and scanned. Inventory currently covers EC2
-  in one selected Region per scan; multi-Region scheduling and other AWS
-  resource types are not implemented.
+- Customer roles can be verified and scanned. Inventory covers EC2, EBS,
+  snapshots, Elastic IPs, NAT, RDS, Lambda, load balancers, ECS, EKS, and S3 in
+  one selected Region per scan. Multi-Region scheduling, RDS clusters, ECS
+  services, EKS node groups, and deeper service metadata are not implemented.
 - No costs, metrics, recommendations, reports, notifications, or audit events
   are collected.
 - Compose checks worker health through Celery control ping, but the public

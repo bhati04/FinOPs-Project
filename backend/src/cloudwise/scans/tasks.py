@@ -2,14 +2,13 @@
 
 import asyncio
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 import structlog
 from celery import Task
 from redis import Redis
 from redis.exceptions import RedisError
-from sqlalchemy import delete, select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from cloudwise.aws_accounts.encryption import ExternalIdCipher
@@ -18,6 +17,7 @@ from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.core.config import get_settings
 from cloudwise.core.database import get_session_factory
 from cloudwise.identity import models as identity_models  # noqa: F401
+from cloudwise.inventory.provider import AWSInventoryProvider, NormalizedResource
 from cloudwise.organizations import models as organization_models  # noqa: F401
 from cloudwise.scans.models import InventoryResource, InventoryScan, ScanStatus
 from cloudwise.worker import celery_app
@@ -116,20 +116,28 @@ async def _collect_inventory(scan_id: UUID) -> None:
                 cipher.decrypt(connection.encrypted_external_id),
                 scan.region,
             )
-            resources = provider.list_ec2_instances()
+            collection = AWSInventoryProvider(provider).collect()
+            if not collection.completed_resource_types:
+                scan.status = ScanStatus.FAILED
+                scan.error_code = "AWS_INVENTORY_UNAVAILABLE"
+                scan.failed_services = list(collection.failed_services)
+                scan.completed_at = datetime.now(UTC)
+                await session.commit()
+                return
+            resources = collection.resources
             discovered_at = datetime.now(UTC)
-            discovered_ids = [resource["resource_id"] for resource in resources]
-            stale_resources = delete(InventoryResource).where(
-                InventoryResource.organization_id == scan.organization_id,
-                InventoryResource.connection_id == scan.connection_id,
-                InventoryResource.region == scan.region,
-                InventoryResource.resource_type == "ec2_instance",
-            )
-            if discovered_ids:
-                stale_resources = stale_resources.where(
-                    InventoryResource.resource_id.not_in(discovered_ids)
+            for resource_type in collection.completed_resource_types:
+                await session.execute(
+                    update(InventoryResource)
+                    .where(
+                        InventoryResource.organization_id == scan.organization_id,
+                        InventoryResource.connection_id == scan.connection_id,
+                        InventoryResource.region == scan.region,
+                        InventoryResource.resource_type == resource_type,
+                        InventoryResource.is_active.is_(True),
+                    )
+                    .values(is_active=False, inactive_at=discovered_at)
                 )
-            await session.execute(stale_resources)
             for resource in resources:
                 values = _resource_values(scan, resource, discovered_at)
                 statement = insert(InventoryResource).values(**values)
@@ -140,13 +148,22 @@ async def _collect_inventory(scan_id: UUID) -> None:
                         "name": statement.excluded.name,
                         "state": statement.excluded.state,
                         "details": statement.excluded.details,
-                        "discovered_at": statement.excluded.discovered_at,
+                        "is_active": True,
+                        "last_seen_at": statement.excluded.last_seen_at,
+                        "inactive_at": None,
                     },
                 )
                 await session.execute(statement)
-            scan.status = ScanStatus.COMPLETED
+            scan.status = (
+                ScanStatus.PARTIAL
+                if collection.failed_services
+                else ScanStatus.COMPLETED
+            )
             scan.resource_count = len(resources)
-            scan.error_code = None
+            scan.error_code = (
+                "PARTIAL_AWS_ACCESS" if collection.failed_services else None
+            )
+            scan.failed_services = list(collection.failed_services)
             scan.completed_at = datetime.now(UTC)
             await session.commit()
         except AWSProviderError:
@@ -161,28 +178,23 @@ async def _collect_inventory(scan_id: UUID) -> None:
 
 def _resource_values(
     scan: InventoryScan,
-    resource: dict[str, Any],
+    resource: NormalizedResource,
     discovered_at: datetime,
 ) -> dict[str, object]:
-    details = {
-        "instance_type": resource["instance_type"],
-        "availability_zone": resource["availability_zone"],
-        "private_ip": resource.get("private_ip"),
-        "public_ip": resource.get("public_ip"),
-        "launch_time": resource["launch_time"].isoformat(),
-        "tags": resource["tags"],
-    }
     return {
         "organization_id": scan.organization_id,
         "connection_id": scan.connection_id,
         "scan_id": scan.id,
-        "region": scan.region,
-        "resource_type": "ec2_instance",
+        "region": resource["region"],
+        "resource_type": resource["resource_type"],
         "resource_id": resource["resource_id"],
         "name": resource["name"],
         "state": resource["state"],
-        "details": details,
+        "details": resource["details"],
         "discovered_at": discovered_at,
+        "is_active": True,
+        "last_seen_at": discovered_at,
+        "inactive_at": None,
     }
 
 

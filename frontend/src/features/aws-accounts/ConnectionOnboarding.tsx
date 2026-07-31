@@ -4,8 +4,10 @@ import {
   Card,
   CardContent,
   Chip,
+  FormControlLabel,
   Grid,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -32,6 +34,7 @@ export function ConnectionOnboarding({ region }: { region: string }) {
   const [accountId, setAccountId] = useState("");
   const [roleArn, setRoleArn] = useState("");
   const [externalId, setExternalId] = useState<string>();
+  const [showInactive, setShowInactive] = useState(false);
   const queryClient = useQueryClient();
   const connections = useQuery({
     queryKey: ["aws-connections"],
@@ -48,8 +51,9 @@ export function ConnectionOnboarding({ region }: { region: string }) {
         : false,
   });
   const persistedResources = useQuery({
-    queryKey: ["persisted-resources", region],
-    queryFn: ({ signal }) => listPersistedResources(region, signal),
+    queryKey: ["persisted-resources", region, showInactive],
+    queryFn: ({ signal }) =>
+      listPersistedResources(region, showInactive, signal),
     refetchInterval: 5000,
   });
   const create = useMutation({
@@ -87,6 +91,13 @@ export function ConnectionOnboarding({ region }: { region: string }) {
     if (!scanByConnection.has(scan.connection_id)) {
       scanByConnection.set(scan.connection_id, scan);
     }
+  }
+  const resourceCounts = new Map<string, number>();
+  for (const resource of persistedResources.data ?? []) {
+    resourceCounts.set(
+      resource.resource_type,
+      (resourceCounts.get(resource.resource_type) ?? 0) + 1,
+    );
   }
 
   return (
@@ -207,7 +218,7 @@ export function ConnectionOnboarding({ region }: { region: string }) {
                       scanByConnection.get(connection.id)?.status ?? "",
                     )
                       ? "Scan running"
-                      : "Scan EC2"}
+                      : "Scan AWS"}
                   </Button>
                 )}
               </Stack>
@@ -241,17 +252,24 @@ export function ConnectionOnboarding({ region }: { region: string }) {
                     </TableCell>
                     <TableCell>{scan.region}</TableCell>
                     <TableCell>
-                      <Chip
-                        size="small"
-                        label={scan.status}
-                        color={
-                          scan.status === "completed"
-                            ? "success"
-                            : scan.status === "failed"
-                              ? "error"
-                              : "warning"
-                        }
-                      />
+                      <Stack alignItems="flex-start">
+                        <Chip
+                          size="small"
+                          label={scan.status}
+                          color={
+                            scan.status === "completed"
+                              ? "success"
+                              : scan.status === "failed"
+                                ? "error"
+                                : "warning"
+                          }
+                        />
+                        {scan.failed_services.length > 0 && (
+                          <Typography variant="caption" color="text.secondary">
+                            Missing: {scan.failed_services.join(", ")}
+                          </Typography>
+                        )}
+                      </Stack>
                     </TableCell>
                     <TableCell>{scan.resource_count}</TableCell>
                     <TableCell>
@@ -275,11 +293,30 @@ export function ConnectionOnboarding({ region }: { region: string }) {
       <Card>
         <CardContent>
           <Typography variant="h6" mb={2}>
-            Persisted EC2 inventory
+            Persisted AWS inventory
           </Typography>
           <Typography color="text.secondary" mb={2}>
             {persistedResources.data?.length ?? 0} resources stored for {region}
           </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showInactive}
+                onChange={(event) => setShowInactive(event.target.checked)}
+              />
+            }
+            label="Include inactive history"
+          />
+          <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
+            {[...resourceCounts.entries()].map(([resourceType, count]) => (
+              <Chip
+                key={resourceType}
+                size="small"
+                variant="outlined"
+                label={`${resourceType.replaceAll("_", " ")}: ${count}`}
+              />
+            ))}
+          </Stack>
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -299,16 +336,22 @@ export function ConnectionOnboarding({ region }: { region: string }) {
                       {resource.resource_id}
                     </TableCell>
                     <TableCell>{resource.resource_type}</TableCell>
-                    <TableCell>{resource.state}</TableCell>
                     <TableCell>
-                      {new Date(resource.discovered_at).toLocaleString()}
+                      <Chip
+                        size="small"
+                        label={resource.state}
+                        color={resource.is_active ? "success" : "default"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {new Date(resource.last_seen_at).toLocaleString()}
                     </TableCell>
                   </TableRow>
                 ))}
                 {persistedResources.data?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5}>
-                      No persisted EC2 resources in this region.
+                      No persisted AWS resources in this region.
                     </TableCell>
                   </TableRow>
                 )}

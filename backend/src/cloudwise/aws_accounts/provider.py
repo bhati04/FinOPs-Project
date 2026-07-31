@@ -8,8 +8,8 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 AWS_CLIENT_CONFIG = Config(
     retries={
-        "max_attempts": 5,
-        "mode": "standard",
+        "max_attempts": 8,
+        "mode": "adaptive",
     },
     connect_timeout=5,
     read_timeout=20,

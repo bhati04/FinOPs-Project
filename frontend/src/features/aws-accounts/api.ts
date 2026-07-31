@@ -48,6 +48,7 @@ const scanSchema = z.object({
   status: z.enum(["queued", "running", "completed", "partial", "failed"]),
   resource_count: z.number().int().nonnegative(),
   error_code: z.string().nullable(),
+  failed_services: z.array(z.string()),
   created_at: z.string().datetime(),
   started_at: z.string().datetime().nullable(),
   completed_at: z.string().datetime().nullable(),
@@ -64,6 +65,9 @@ const persistedResourceSchema = z.object({
   state: z.string(),
   details: z.record(z.string(), z.unknown()),
   discovered_at: z.string().datetime(),
+  is_active: z.boolean(),
+  last_seen_at: z.string().datetime(),
+  inactive_at: z.string().datetime().nullable(),
 });
 
 export type AwsIdentity = z.infer<typeof identitySchema>;
@@ -176,7 +180,7 @@ export async function startInventoryScan(id: string, region: string) {
   );
   const payload: unknown = await response.json();
   if (!response.ok) {
-    throw new Error("The inventory scan could not be started.");
+    throw new Error("The AWS inventory scan could not be started.");
   }
   return scanSchema.parse(payload);
 }
@@ -189,11 +193,17 @@ export function listInventoryScans(signal?: AbortSignal) {
   );
 }
 
-export function listPersistedResources(region: string, signal?: AbortSignal) {
+export function listPersistedResources(
+  region: string,
+  includeInactive: boolean,
+  signal?: AbortSignal,
+) {
   return getJson(
     runtimeConfig.apiBaseUrl +
       "/inventory/resources?region=" +
-      encodeURIComponent(region),
+      encodeURIComponent(region) +
+      "&include_inactive=" +
+      String(includeInactive),
     z.array(persistedResourceSchema),
     signal,
   );

@@ -62,6 +62,7 @@ class InventoryScanService:
             status=ScanStatus.QUEUED,
             resource_count=0,
             error_code=None,
+            failed_services=[],
             created_at=datetime.now(UTC),
             started_at=None,
             completed_at=None,
@@ -107,6 +108,7 @@ class InventoryScanService:
         organization_id: UUID,
         connection_id: UUID | None = None,
         region: str | None = None,
+        include_inactive: bool = False,
     ) -> list[InventoryResourceResponse]:
         """List the latest persisted resources within a tenant boundary."""
         query = select(InventoryResource).where(
@@ -116,6 +118,8 @@ class InventoryScanService:
             query = query.where(InventoryResource.connection_id == connection_id)
         if region is not None:
             query = query.where(InventoryResource.region == region)
+        if not include_inactive:
+            query = query.where(InventoryResource.is_active.is_(True))
         resources = (
             await self._session.scalars(query.order_by(InventoryResource.name))
         ).all()
@@ -130,6 +134,7 @@ class InventoryScanService:
             status=scan.status,
             resource_count=scan.resource_count,
             error_code=scan.error_code,
+            failed_services=scan.failed_services,
             created_at=scan.created_at,
             started_at=scan.started_at,
             completed_at=scan.completed_at,
@@ -148,4 +153,7 @@ class InventoryScanService:
             state=resource.state,
             details=resource.details,
             discovered_at=resource.discovered_at,
+            is_active=resource.is_active,
+            last_seen_at=resource.last_seen_at,
+            inactive_at=resource.inactive_at,
         )

@@ -85,10 +85,12 @@ async def list_inventory_resources(
     service: Annotated[InventoryScanService, Depends(get_scan_service)],
     connection_id: UUID | None = None,
     region: str | None = Query(default=None, min_length=9, max_length=30),
+    include_inactive: bool = False,
 ) -> list[InventoryResourceResponse]:
     """List persisted resources for the authenticated organization."""
     return await service.list_resources(
         current_user.organization_id,
         connection_id,
         region,
+        include_inactive,
     )
