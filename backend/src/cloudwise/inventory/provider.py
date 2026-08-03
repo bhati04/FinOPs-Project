@@ -106,9 +106,7 @@ class AWSInventoryProvider:
                             "region": self._region,
                             "details": {
                                 "instance_type": instance["InstanceType"],
-                                "availability_zone": instance["Placement"][
-                                    "AvailabilityZone"
-                                ],
+                                "availability_zone": instance["Placement"]["AvailabilityZone"],
                                 "private_ip": instance.get("PrivateIpAddress"),
                                 "public_ip": instance.get("PublicIpAddress"),
                                 "launch_time": self._json_value(instance["LaunchTime"]),
@@ -181,9 +179,7 @@ class AWSInventoryProvider:
                     "resource_type": "elastic_ip",
                     "resource_id": address.get("AllocationId", address["PublicIp"]),
                     "name": address["PublicIp"],
-                    "state": (
-                        "associated" if address.get("AssociationId") else "unassociated"
-                    ),
+                    "state": ("associated" if address.get("AssociationId") else "unassociated"),
                     "region": self._region,
                     "details": {
                         "public_ip": address["PublicIp"],
@@ -288,8 +284,7 @@ class AWSInventoryProvider:
                             "scheme": balancer["Scheme"],
                             "vpc_id": balancer["VpcId"],
                             "availability_zones": [
-                                zone["ZoneName"]
-                                for zone in balancer.get("AvailabilityZones", [])
+                                zone["ZoneName"] for zone in balancer.get("AvailabilityZones", [])
                             ],
                         },
                     }
@@ -322,8 +317,7 @@ class AWSInventoryProvider:
                                 "registeredContainerInstancesCount", 0
                             ),
                             "tags": {
-                                item["key"]: item["value"]
-                                for item in cluster.get("tags", [])
+                                item["key"]: item["value"] for item in cluster.get("tags", [])
                             },
                         },
                     }
@@ -361,9 +355,7 @@ class AWSInventoryProvider:
         client = self._client("s3")
         resources: list[NormalizedResource] = []
         for bucket in client.list_buckets().get("Buckets", []):
-            location = client.get_bucket_location(Bucket=bucket["Name"]).get(
-                "LocationConstraint"
-            )
+            location = client.get_bucket_location(Bucket=bucket["Name"]).get("LocationConstraint")
             bucket_region = "us-east-1" if location in {None, ""} else location
             if bucket_region != self._region:
                 continue

@@ -39,9 +39,7 @@ class CostSyncService:
         self._session = session
         self._celery_app = celery_app
 
-    async def start_sync(
-        self, organization_id: UUID, connection_id: UUID
-    ) -> CostSyncResponse:
+    async def start_sync(self, organization_id: UUID, connection_id: UUID) -> CostSyncResponse:
         """Queue a cost synchronization for a verified connection."""
         connection = await self._session.scalar(
             select(AWSAccountConnection).where(

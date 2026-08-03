@@ -85,7 +85,11 @@ class AWSCostProvider:
                                 "grouping": grouping,
                                 "amount": Decimal(metric["Amount"]),
                                 "currency": metric["Unit"],
-                                **dimensions,
+                                "service": dimensions["service"],
+                                "region": dimensions["region"],
+                                "usage_type": dimensions["usage_type"],
+                                "tag_key": dimensions["tag_key"],
+                                "tag_value": dimensions["tag_value"],
                             }
                         )
                 token = response.get("NextPageToken")

@@ -6,12 +6,12 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    JSON,
     Date,
     DateTime,
     Enum,
     ForeignKey,
     Index,
-    JSON,
     Numeric,
     String,
     UniqueConstraint,
@@ -67,9 +67,7 @@ class CostSync(Base):
     connection_id: Mapped[UUID] = mapped_column(
         ForeignKey("aws_account_connections.id", ondelete="CASCADE"), index=True
     )
-    status: Mapped[CostSyncStatus] = mapped_column(
-        Enum(CostSyncStatus, name="cost_sync_status")
-    )
+    status: Mapped[CostSyncStatus] = mapped_column(Enum(CostSyncStatus, name="cost_sync_status"))
     record_count: Mapped[int] = mapped_column(default=0)
     error_code: Mapped[str | None] = mapped_column(String(80))
     failed_facets: Mapped[list[str]] = mapped_column(JSON, default=list)
@@ -113,9 +111,7 @@ class CostAggregate(Base):
         Enum(CostGranularity, name="cost_granularity")
     )
     period_start: Mapped[date] = mapped_column(Date)
-    grouping: Mapped[CostGrouping] = mapped_column(
-        Enum(CostGrouping, name="cost_grouping")
-    )
+    grouping: Mapped[CostGrouping] = mapped_column(Enum(CostGrouping, name="cost_grouping"))
     service: Mapped[str] = mapped_column(String(255), default="")
     region: Mapped[str] = mapped_column(String(80), default="")
     usage_type: Mapped[str] = mapped_column(String(255), default="")

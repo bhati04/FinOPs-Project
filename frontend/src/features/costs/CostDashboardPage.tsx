@@ -225,9 +225,14 @@ export function CostDashboardPage() {
                 estimates and may change as AWS finalizes billing data.
               </Typography>
             </Box>
-            <Button component={Link} to="/aws-account" variant="outlined">
-              AWS accounts
-            </Button>
+            <Stack direction="row" gap={1}>
+              <Button component={Link} to="/metrics" variant="outlined">
+                Metrics
+              </Button>
+              <Button component={Link} to="/aws-account" variant="outlined">
+                AWS accounts
+              </Button>
+            </Stack>
           </Stack>
 
           {error && <Alert severity="error">{error.message}</Alert>}

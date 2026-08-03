@@ -48,7 +48,8 @@ inventory scan and Cost Explorer synchronization:
         "s3:ListAllMyBuckets",
         "s3:GetBucketLocation",
         "ce:GetCostAndUsage",
-        "ce:GetCostForecast"
+        "ce:GetCostForecast",
+        "cloudwatch:GetMetricData"
       ],
       "Resource": "*"
     }

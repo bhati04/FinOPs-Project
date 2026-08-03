@@ -42,3 +42,19 @@ enter logs or persistent scan records.
 
 Different currencies remain separate. AWS credentials, External IDs, raw AWS
 errors, and environment values never enter logs or cost records.
+
+## CloudWatch metric boundary
+
+1. An authorized organization member requests metrics for a verified
+   connection, Region, and bounded 7-to-30-day window.
+2. FastAPI persists a queued metric sync and sends only its UUID to Celery.
+3. The worker claims the sync, loads active tenant-scoped inventory resources,
+   decrypts the External ID in memory, and assumes the customer role.
+4. The provider maps supported resource types to explicit CloudWatch namespaces
+   and dimensions, then paginates `GetMetricData` in batches of at most 500
+   queries.
+5. Hourly datapoints are idempotently upserted by resource, metric, statistic,
+   and timestamp. Safe batch failures produce a partial or failed sync.
+
+Raw AWS resource identifiers are used only to construct the outbound CloudWatch
+request. They are not written to logs or metric API responses.

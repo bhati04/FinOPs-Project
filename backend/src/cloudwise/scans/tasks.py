@@ -29,7 +29,7 @@ class ScanLockUnavailable(RuntimeError):
     """Signal that another worker currently owns the connection scan lock."""
 
 
-@celery_app.task(
+@celery_app.task(  # type: ignore[untyped-decorator]
     bind=True,
     name="cloudwise.scans.run_inventory_scan",
     max_retries=30,
@@ -54,7 +54,7 @@ async def _run_inventory_scan(scan_id: UUID) -> None:
             return
         connection_id = scan.connection_id
 
-    redis_client: Redis[bytes] = Redis.from_url(str(settings.redis_url))
+    redis_client: Redis = Redis.from_url(str(settings.redis_url))
     try:
         lock = redis_client.lock(
             f"cloudwise:scan-lock:{connection_id}",
@@ -108,9 +108,7 @@ async def _collect_inventory(scan_id: UUID) -> None:
         await session.commit()
 
         try:
-            cipher = ExternalIdCipher(
-                settings.external_id_encryption_key.get_secret_value()
-            )
+            cipher = ExternalIdCipher(settings.external_id_encryption_key.get_secret_value())
             provider = AWSProvider.for_assumed_role(
                 connection.role_arn,
                 cipher.decrypt(connection.encrypted_external_id),
@@ -154,15 +152,9 @@ async def _collect_inventory(scan_id: UUID) -> None:
                     },
                 )
                 await session.execute(statement)
-            scan.status = (
-                ScanStatus.PARTIAL
-                if collection.failed_services
-                else ScanStatus.COMPLETED
-            )
+            scan.status = ScanStatus.PARTIAL if collection.failed_services else ScanStatus.COMPLETED
             scan.resource_count = len(resources)
-            scan.error_code = (
-                "PARTIAL_AWS_ACCESS" if collection.failed_services else None
-            )
+            scan.error_code = "PARTIAL_AWS_ACCESS" if collection.failed_services else None
             scan.failed_services = list(collection.failed_services)
             scan.completed_at = datetime.now(UTC)
             await session.commit()

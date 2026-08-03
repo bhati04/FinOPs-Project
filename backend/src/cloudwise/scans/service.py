@@ -95,9 +95,7 @@ class InventoryScanService:
         connection_id: UUID | None = None,
     ) -> list[InventoryScanResponse]:
         """List scans visible to one organization."""
-        query = select(InventoryScan).where(
-            InventoryScan.organization_id == organization_id
-        )
+        query = select(InventoryScan).where(InventoryScan.organization_id == organization_id)
         if connection_id is not None:
             query = query.where(InventoryScan.connection_id == connection_id)
         scans = (await self._session.scalars(query.order_by(InventoryScan.created_at.desc()))).all()
@@ -120,9 +118,7 @@ class InventoryScanService:
             query = query.where(InventoryResource.region == region)
         if not include_inactive:
             query = query.where(InventoryResource.is_active.is_(True))
-        resources = (
-            await self._session.scalars(query.order_by(InventoryResource.name))
-        ).all()
+        resources = (await self._session.scalars(query.order_by(InventoryResource.name))).all()
         return [self._resource_response(resource) for resource in resources]
 
     @staticmethod

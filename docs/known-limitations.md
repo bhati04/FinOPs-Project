@@ -9,11 +9,14 @@
   services, EKS node groups, and deeper service metadata are not implemented.
 - Cost Explorer UnblendedCost actuals and forecasts are collected on demand.
   Scheduled synchronization, amortized and net cost metrics, CloudWatch usage
-  metrics, recommendations, reports, notifications, and audit events are not
-  implemented. The optional grouping supports one configured cost-allocation
-  tag, and AWS billing data can be delayed or revised. The dashboard's monthly
-  estimate is a simple daily run-rate projection and does not model seasonality
-  or planned workload changes.
+  beyond the supported resource set, recommendations, reports, notifications,
+  and audit events are not implemented. CloudWatch synchronization is on
+  demand and currently covers EC2, EBS, NAT gateways, RDS instances, Lambda,
+  and application load balancers at hourly granularity. The optional cost
+  grouping supports one configured cost-allocation tag, and AWS billing data
+  can be delayed or revised. The dashboard's monthly estimate is a simple
+  daily run-rate projection and does not model seasonality or planned workload
+  changes.
 - Compose checks worker health through Celery control ping, but the public
   readiness API does not yet expose worker status.
 - Local PostgreSQL and Redis credentials are intentionally simple and must not

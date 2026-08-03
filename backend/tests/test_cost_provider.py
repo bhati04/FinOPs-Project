@@ -29,9 +29,7 @@ def test_cost_provider_normalizes_grouped_amounts() -> None:
                 "Groups": [
                     {
                         "Keys": ["Amazon Elastic Compute Cloud - Compute", "us-east-1"],
-                        "Metrics": {
-                            "UnblendedCost": {"Amount": "1.25000000", "Unit": "USD"}
-                        },
+                        "Metrics": {"UnblendedCost": {"Amount": "1.25000000", "Unit": "USD"}},
                     }
                 ],
             }
@@ -70,9 +68,7 @@ def test_cost_provider_paginates_usage_type_groups() -> None:
                     "Groups": [
                         {
                             "Keys": ["BoxUsage:t3.micro"],
-                            "Metrics": {
-                                "UnblendedCost": {"Amount": "0.42", "Unit": "USD"}
-                            },
+                            "Metrics": {"UnblendedCost": {"Amount": "0.42", "Unit": "USD"}},
                         }
                     ],
                 }
@@ -105,9 +101,7 @@ def test_cost_provider_normalizes_configured_tag_values() -> None:
                 "Groups": [
                     {
                         "Keys": ["Environment$production"],
-                        "Metrics": {
-                            "UnblendedCost": {"Amount": "8.00", "Unit": "USD"}
-                        },
+                        "Metrics": {"UnblendedCost": {"Amount": "8.00", "Unit": "USD"}},
                     }
                 ],
             }

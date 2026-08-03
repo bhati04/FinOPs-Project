@@ -13,8 +13,8 @@ Browser -> Frontend (nginx) -> FastAPI
                               |-> Redis <- Celery worker
 ```
 
-In later milestones, the API and worker will access customer AWS accounts only
-through provider interfaces backed by short-lived STS AssumeRole sessions.
+The API and worker access customer AWS accounts only through provider
+interfaces backed by short-lived STS AssumeRole sessions.
 
 The optional `ai_advisor` module is a future-facing outbound provider boundary.
 It is disabled by default and currently has no route, task, or persistence. A

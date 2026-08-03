@@ -85,3 +85,20 @@ source currency; callers must not add values with different currencies.
 
 The worker stores safe lifecycle error codes and facet names. It never stores
 temporary AWS credentials or exposes raw provider errors through these routes.
+
+## Resource metric endpoints
+
+`POST /api/v1/metrics/connections/{connection_id}/sync` queues a read-only
+CloudWatch synchronization for active inventory resources. It accepts a
+`region` and a history window of `days=7..30` (default 14). Owners,
+administrators, and analysts may start a sync. One queued or running sync is
+allowed per connection and Region.
+
+`GET /api/v1/metrics/syncs` returns the organization's metric sync history.
+`GET /api/v1/metrics/resources/{inventory_resource_id}` returns up to 30 days
+of organization-scoped hourly datapoints for one resource. It accepts `days`
+and an optional `metric_name` filter.
+
+CloudWatch queries are batched at 500 metrics per request and paginated. The
+worker records only safe batch counts and lifecycle error codes; resource IDs,
+provider errors, credentials, and External IDs never enter logs.

@@ -77,8 +77,8 @@ async def list_cost_syncs(
 async def list_cost_aggregates(
     current_user: CurrentUser,
     service: Annotated[CostSyncService, Depends(get_cost_service)],
-    granularity: CostGranularity = Query(default=CostGranularity.DAILY),
-    grouping: CostGrouping = Query(default=CostGrouping.SERVICE_REGION),
+    granularity: Annotated[CostGranularity, Query()] = CostGranularity.DAILY,
+    grouping: Annotated[CostGrouping, Query()] = CostGrouping.SERVICE_REGION,
     connection_id: UUID | None = None,
 ) -> list[CostAggregateResponse]:
     """List persisted Cost Explorer aggregates."""
@@ -91,10 +91,8 @@ async def list_cost_aggregates(
 async def list_cost_forecasts(
     current_user: CurrentUser,
     service: Annotated[CostSyncService, Depends(get_cost_service)],
-    granularity: CostGranularity = Query(default=CostGranularity.DAILY),
+    granularity: Annotated[CostGranularity, Query()] = CostGranularity.DAILY,
     connection_id: UUID | None = None,
 ) -> list[CostForecastResponse]:
     """List persisted organization-scoped Cost Explorer forecasts."""
-    return await service.list_forecasts(
-        current_user.organization_id, granularity, connection_id
-    )
+    return await service.list_forecasts(current_user.organization_id, granularity, connection_id)

@@ -44,7 +44,7 @@ def _forecast_windows(
     )
 
 
-@celery_app.task(name="cloudwise.costs.synchronize")
+@celery_app.task(name="cloudwise.costs.synchronize")  # type: ignore[untyped-decorator]
 def synchronize_costs(sync_id: str) -> None:
     """Synchronize daily and monthly Cost Explorer aggregates."""
     asyncio.run(_synchronize_costs(UUID(sync_id)))
@@ -82,9 +82,9 @@ async def _synchronize_costs(sync_id: UUID) -> None:
         try:
             provider = AWSProvider.for_assumed_role(
                 connection.role_arn,
-                ExternalIdCipher(
-                    settings.external_id_encryption_key.get_secret_value()
-                ).decrypt(connection.encrypted_external_id),
+                ExternalIdCipher(settings.external_id_encryption_key.get_secret_value()).decrypt(
+                    connection.encrypted_external_id
+                ),
                 "us-east-1",
             )
             cost_provider = AWSCostProvider(provider)
@@ -176,9 +176,7 @@ async def _synchronize_costs(sync_id: UUID) -> None:
                         },
                     )
                 )
-            sync.status = (
-                CostSyncStatus.PARTIAL if failed_facets else CostSyncStatus.COMPLETED
-            )
+            sync.status = CostSyncStatus.PARTIAL if failed_facets else CostSyncStatus.COMPLETED
             sync.record_count = len(records) + len(forecasts)
             sync.error_code = "COST_DATA_PARTIAL" if failed_facets else None
             sync.failed_facets = failed_facets
