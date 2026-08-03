@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from cloudwise.aws_accounts import models as aws_account_models  # noqa: F401
 from cloudwise.core.config import get_settings
 from cloudwise.core.database import Base
+from cloudwise.cost_management import models as cost_models  # noqa: F401
 from cloudwise.identity import models as identity_models  # noqa: F401
 from cloudwise.organizations import models as organization_models  # noqa: F401
 from cloudwise.scans import models as scan_models  # noqa: F401

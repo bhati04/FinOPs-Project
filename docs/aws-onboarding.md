@@ -19,10 +19,10 @@ External IDs are encrypted with
 identity policy allowing `sts:AssumeRole` only for approved customer-role ARNs.
 Long-lived customer AWS keys remain forbidden.
 
-## Milestone 4 inventory policy
+## Milestones 4 and 5 read policy
 
 The customer-managed role needs only read actions used by the selected-Region
-inventory scan:
+inventory scan and Cost Explorer synchronization:
 
 ```json
 {
@@ -42,10 +42,13 @@ inventory scan:
         "elasticloadbalancing:DescribeLoadBalancers",
         "ecs:ListClusters",
         "ecs:DescribeClusters",
+        "ecs:ListTagsForResource",
         "eks:ListClusters",
         "eks:DescribeCluster",
         "s3:ListAllMyBuckets",
-        "s3:GetBucketLocation"
+        "s3:GetBucketLocation",
+        "ce:GetCostAndUsage",
+        "ce:GetCostForecast"
       ],
       "Resource": "*"
     }

@@ -3,10 +3,11 @@
 CloudWise is a production-oriented foundation for secure, explainable,
 multi-account AWS cost visibility and governance. The current repository
 implements the platform foundation, organization-scoped identity, secure AWS
-role onboarding, and asynchronous read-only multi-service AWS inventory scans.
+role onboarding, asynchronous read-only multi-service AWS inventory scans, and
+tenant-scoped Cost Explorer actuals and forecasts.
 
-> Cost analysis, recommendation rules, reports, and automated remediation are
-> not implemented yet. A disabled, unexposed AI-advisor provider foundation
+> CloudWatch metrics, recommendation rules, reports, and automated remediation
+> are not implemented yet. A disabled, unexposed AI-advisor provider foundation
 > exists for a future user-clicked recommendation explanation; it does not call
 > a model during scans or page loads.
 
@@ -83,7 +84,7 @@ For the complete EC2 deployment and product-readiness checklist, see
 | 2 | Secure AWS account onboarding | Implemented |
 | 3 | Inventory persistence and scan orchestration | Implemented |
 | 4 | Broader real AWS inventory | In progress: core services, one Region per scan |
-| 5 | Cost and metrics | Not started |
+| 5 | Cost and metrics | In progress: Cost Explorer actuals and forecasts |
 | 6 | Recommendation engine | Not started |
 | 7 | Reports, notifications, and audit | Not started |
 | 8 | Production hardening and deployment | Not started |

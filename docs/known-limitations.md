@@ -7,8 +7,11 @@
   snapshots, Elastic IPs, NAT, RDS, Lambda, load balancers, ECS, EKS, and S3 in
   one selected Region per scan. Multi-Region scheduling, RDS clusters, ECS
   services, EKS node groups, and deeper service metadata are not implemented.
-- No costs, metrics, recommendations, reports, notifications, or audit events
-  are collected.
+- Cost Explorer UnblendedCost actuals and forecasts are collected on demand.
+  Scheduled synchronization, amortized and net cost metrics, CloudWatch usage
+  metrics, recommendations, reports, notifications, and audit events are not
+  implemented. The optional grouping supports one configured cost-allocation
+  tag, and AWS billing data can be delayed or revised.
 - Compose checks worker health through Celery control ping, but the public
   readiness API does not yet expose worker status.
 - Local PostgreSQL and Redis credentials are intentionally simple and must not

@@ -63,3 +63,25 @@ External ID, uses only short-lived STS credentials, and records safe error
 codes rather than AWS credentials or environment values. A scan is `partial`
 when one or more service collectors are denied or unavailable; its
 `failed_services` field lists safe service labels.
+
+## Cost management endpoints
+
+`POST /api/v1/costs/connections/{connection_id}/sync` queues a read-only Cost
+Explorer synchronization for a verified, organization-scoped connection.
+Owners, administrators, and analysts may start a sync. Only one queued or
+running cost sync is allowed per connection.
+
+`GET /api/v1/costs/syncs` returns the authenticated organization's cost sync
+history. `GET /api/v1/costs/aggregates` returns stored UnblendedCost actuals;
+use `granularity=daily|monthly`, `grouping=service_region|usage_type|tag`, and
+an optional `connection_id` filter. Tag results exist only when
+`CLOUDWISE_COST_ALLOCATION_TAG_KEY` is configured and activated in AWS Cost
+Explorer.
+
+`GET /api/v1/costs/forecasts` returns AWS Cost Explorer mean, lower-bound, and
+upper-bound forecast values. It accepts `granularity=daily|monthly` and an
+optional `connection_id`. Actual and forecast responses always retain their
+source currency; callers must not add values with different currencies.
+
+The worker stores safe lifecycle error codes and facet names. It never stores
+temporary AWS credentials or exposes raw provider errors through these routes.

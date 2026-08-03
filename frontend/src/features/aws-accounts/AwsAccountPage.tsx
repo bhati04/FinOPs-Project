@@ -104,6 +104,9 @@ export function AwsAccountPage() {
               <Button component={Link} to="/" variant="outlined">
                 Platform
               </Button>
+              <Button component={Link} to="/costs" variant="outlined">
+                Costs
+              </Button>
               <Button
                 color="inherit"
                 onClick={() => {

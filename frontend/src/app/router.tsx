@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import { AwsAccountPage } from "../features/aws-accounts/AwsAccountPage";
+import { CostDashboardPage } from "../features/costs/CostDashboardPage";
 import { LoginPage } from "../features/identity/LoginPage";
 import { RequireAuth } from "../features/identity/RequireAuth";
 import { FoundationPage } from "../features/platform-health/FoundationPage";
@@ -14,6 +15,14 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <AwsAccountPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/costs",
+    element: (
+      <RequireAuth>
+        <CostDashboardPage />
       </RequireAuth>
     ),
   },

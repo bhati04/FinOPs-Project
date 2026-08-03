@@ -26,3 +26,19 @@ Connection strings and underlying exception messages never leave the backend.
 
 Raw credentials, session tokens, External IDs, and environment values never
 enter logs or persistent scan records.
+
+## Cost Explorer boundary
+
+1. An owner, administrator, or analyst requests a cost sync for a verified
+   organization-scoped connection.
+2. FastAPI persists a queued sync and sends only its UUID to Celery.
+3. The worker atomically claims the sync, decrypts the connection's External ID
+   in memory, and assumes the customer role with short-lived STS credentials.
+4. The Cost Explorer provider paginates daily and monthly UnblendedCost views
+   and requests daily and monthly forecasts.
+5. The worker idempotently upserts tenant-scoped aggregates and forecast bounds,
+   then marks the sync completed, partial, or failed with safe facet labels and
+   error codes.
+
+Different currencies remain separate. AWS credentials, External IDs, raw AWS
+errors, and environment values never enter logs or cost records.

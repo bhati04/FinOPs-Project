@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     external_id_encryption_key: SecretStr = SecretStr(
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
     )
+    cost_allocation_tag_key: str | None = Field(default=None, max_length=128)
     ai_advisor_enabled: bool = False
     ai_advisor_provider: Literal["bedrock"] = "bedrock"
     ai_advisor_model_id: str | None = None

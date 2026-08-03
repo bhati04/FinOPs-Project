@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from cloudwise.aws_accounts.router import router as aws_accounts_router
+from cloudwise.cost_management.router import router as cost_router
 from cloudwise.identity.router import router as identity_router
 from cloudwise.platform_health.router import router as health_router
 from cloudwise.scans.router import router as scans_router
@@ -30,4 +31,10 @@ api_router.include_router(
 api_router.include_router(
     scans_router,
     tags=["inventory-scans"],
+)
+
+api_router.include_router(
+    cost_router,
+    prefix="/costs",
+    tags=["cost-management"],
 )
