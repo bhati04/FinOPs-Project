@@ -45,12 +45,26 @@ import {
   listCostSyncs,
   startCostSync,
 } from "./api";
+import {
+  buildDailyServiceBreakdown,
+  estimateCurrentMonthCost,
+} from "./calculations";
 
 const groupingLabels: Record<CostGrouping, string> = {
   service_region: "Service and Region",
   usage_type: "Usage type",
   tag: "Configured cost tag",
 };
+
+const serviceColors = [
+  "#72d6c4",
+  "#34526f",
+  "#f4b860",
+  "#7968a8",
+  "#ef8354",
+  "#4f9da6",
+  "#a7a9ac",
+];
 
 function categoryLabel(row: CostAggregate) {
   if (row.grouping === "usage_type") return row.usage_type || "Unknown";
@@ -94,6 +108,16 @@ export function CostDashboardPage() {
     queryFn: ({ signal }) =>
       listCostAggregates(granularity, grouping, selectedConnection, signal),
   });
+  const dailyServices = useQuery({
+    queryKey: [
+      "cost-aggregates",
+      "daily",
+      "service_region",
+      selectedConnection,
+    ],
+    queryFn: ({ signal }) =>
+      listCostAggregates("daily", "service_region", selectedConnection, signal),
+  });
   const forecasts = useQuery({
     queryKey: ["cost-forecasts", granularity, selectedConnection],
     queryFn: ({ signal }) =>
@@ -118,12 +142,21 @@ export function CostDashboardPage() {
   const currencies = [
     ...new Set([
       ...(aggregates.data?.map((row) => row.currency) ?? []),
+      ...(dailyServices.data?.map((row) => row.currency) ?? []),
       ...(forecasts.data?.map((row) => row.currency) ?? []),
     ]),
   ].sort();
   const selectedCurrency = currencies.includes(currency ?? "")
     ? currency
     : currencies[0];
+  const dailyServiceBreakdown = buildDailyServiceBreakdown(
+    dailyServices.data ?? [],
+    selectedCurrency,
+  );
+  const monthlyEstimate = estimateCurrentMonthCost(
+    dailyServices.data ?? [],
+    selectedCurrency,
+  );
   const periodTotals = new Map<string, number>();
   for (const row of aggregates.data ?? []) {
     if (row.currency !== selectedCurrency) continue;
@@ -150,10 +183,6 @@ export function CostDashboardPage() {
   }));
   const latestPeriod = [...periodTotals.keys()].sort().at(-1);
   const latestTotal = latestPeriod ? periodTotals.get(latestPeriod) : undefined;
-  const forecastTotal = [...forecastTotals.values()].reduce(
-    (total, amount) => total + amount,
-    0,
-  );
   const categories = new Map<string, number>();
   for (const row of aggregates.data ?? []) {
     if (row.currency !== selectedCurrency || row.period_start !== latestPeriod)
@@ -171,6 +200,7 @@ export function CostDashboardPage() {
     connections.error ??
     syncs.error ??
     aggregates.error ??
+    dailyServices.error ??
     forecasts.error ??
     synchronize.error;
   const loading = aggregates.isLoading || forecasts.isLoading;
@@ -324,7 +354,7 @@ export function CostDashboardPage() {
           </Card>
 
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card sx={{ height: "100%" }}>
                 <CardContent>
                   <Typography color="text.secondary">
@@ -339,24 +369,85 @@ export function CostDashboardPage() {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Card sx={{ height: "100%" }}>
+                <CardContent>
+                  <Typography color="text.secondary">Month to date</Typography>
+                  <Typography variant="h3" mt={1}>
+                    {formatMoney(
+                      monthlyEstimate?.monthToDate,
+                      selectedCurrency,
+                    )}
+                  </Typography>
+                  <Typography color="text.secondary" mt={1}>
+                    {monthlyEstimate
+                      ? `Daily actuals through ${monthlyEstimate.through}`
+                      : "No current-month daily data"}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Card sx={{ height: "100%" }}>
                 <CardContent>
                   <Typography color="text.secondary">
-                    Forecast total ({granularity})
+                    Estimated monthly cost
                   </Typography>
                   <Typography variant="h3" mt={1}>
-                    {forecastTotals.size
-                      ? formatMoney(forecastTotal, selectedCurrency)
-                      : "—"}
+                    {formatMoney(
+                      monthlyEstimate?.estimatedMonthEnd,
+                      selectedCurrency,
+                    )}
                   </Typography>
                   <Typography color="text.secondary" mt={1}>
-                    80% prediction interval data is retained by the API.
+                    Month-to-date daily average projected through month end.
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
+
+          <Card>
+            <CardContent>
+              <Typography variant="h6">
+                Daily cost by AWS service
+                {selectedCurrency ? ` (${selectedCurrency})` : ""}
+              </Typography>
+              <Typography color="text.secondary" mb={2}>
+                Seven calendar days ending with the latest synchronized day.
+                Regions are combined, with the six largest services shown
+                separately.
+              </Typography>
+              {dailyServices.isLoading ? (
+                <CircularProgress size={28} />
+              ) : dailyServiceBreakdown.data.length ? (
+                <Box sx={{ width: "100%", height: 380 }}>
+                  <ResponsiveContainer>
+                    <ComposedChart data={dailyServiceBreakdown.data}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      {dailyServiceBreakdown.services.map((service, index) => (
+                        <Bar
+                          key={service}
+                          dataKey={service}
+                          stackId="services"
+                          fill={serviceColors[index % serviceColors.length]}
+                        />
+                      ))}
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </Box>
+              ) : (
+                <Alert severity="info">
+                  No daily service costs are available yet. Run a cost
+                  synchronization after enabling Cost Explorer.
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent>

@@ -23,6 +23,17 @@ CloudWise never converts currencies. The API and dashboard keep each source
 currency separate. Synchronization upserts the same dimensional periods, so a
 repeat run refreshes values without creating duplicate aggregates.
 
+The dashboard presents a stacked service view for the seven calendar days
+ending with the latest synchronized daily period. Region-level rows are summed
+under their AWS service, the six largest services are displayed separately,
+and remaining services are combined as `Other services`.
+
+The estimated monthly cost is a transparent run-rate projection, not the AWS
+forecast: month-to-date daily actuals are divided by the latest synchronized
+day number and multiplied by the number of calendar days in that month. The
+dashboard shows the actual-data cutoff used by the calculation. No estimate is
+shown until current-month daily data exists.
+
 Savings calculation is not implemented. Future pricing logic will live behind
 a cached provider abstraction. Each recommendation will persist pricing inputs,
 Region, currency, assumption version, and evidence period so estimates remain

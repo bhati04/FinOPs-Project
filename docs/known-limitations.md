@@ -11,7 +11,9 @@
   Scheduled synchronization, amortized and net cost metrics, CloudWatch usage
   metrics, recommendations, reports, notifications, and audit events are not
   implemented. The optional grouping supports one configured cost-allocation
-  tag, and AWS billing data can be delayed or revised.
+  tag, and AWS billing data can be delayed or revised. The dashboard's monthly
+  estimate is a simple daily run-rate projection and does not model seasonality
+  or planned workload changes.
 - Compose checks worker health through Celery control ping, but the public
   readiness API does not yet expose worker status.
 - Local PostgreSQL and Redis credentials are intentionally simple and must not
