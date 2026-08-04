@@ -34,10 +34,20 @@ day number and multiplied by the number of calendar days in that month. The
 dashboard shows the actual-data cutoff used by the calculation. No estimate is
 shown until current-month daily data exists.
 
-Savings calculation is not implemented. Future pricing logic will live behind
-a cached provider abstraction. Each recommendation will persist pricing inputs,
-Region, currency, assumption version, and evidence period so estimates remain
-explainable.
+Recommendation savings use a versioned pricing-provider abstraction. Production
+queries regional AWS Price List on-demand rates; local development uses a
+visibly labelled mock catalog. Each recommendation persists pricing source,
+version, effective and retrieval timestamps, component quantities, tier rates,
+currency, and evidence period.
+
+Unattached EBS estimates include storage, provisioned IOPS for io1/io2, and gp3
+IOPS and throughput above the included baselines. Unassociated Elastic IP
+estimates use 730 hours per month. Current monthly cost and estimated monthly
+savings are equal for these release/delete opportunities. They are
+usage-based list-price estimates, not billed actuals, and exclude discounts,
+credits, taxes, free-tier benefits, and partial-month usage. Missing or
+ambiguous pricing remains unavailable; a failed refresh retains an earlier
+estimate as stale.
 
 The platform's own production cost model will cover ECS, ALB, RDS, Redis,
 NAT/networking, logs, metrics, backups, and data transfer before Milestone 8.

@@ -19,3 +19,10 @@ deletion during routine troubleshooting.
 Production alert thresholds, queue recovery, failed-job handling, and escalation
 contacts will be defined with Milestone 8 observability.
 
+## Reports and scheduler
+
+Monitor the worker queue for `cloudwise.reports.generate_report` and ensure
+exactly one Celery beat scheduler is active. Failed jobs retain a safe
+`error_code`; report contents and recipients must not appear in logs. The
+hourly expiration task should transition completed expired reports to
+`expired` after deleting their private object.

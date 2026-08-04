@@ -32,6 +32,19 @@ class Settings(BaseSettings):
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
     )
     cost_allocation_tag_key: str | None = Field(default=None, max_length=128)
+    recommendation_pricing_provider: Literal["aws", "mock"] = "mock"
+    recommendation_pricing_endpoint_region: Literal["us-east-1", "eu-central-1", "ap-south-1"] = (
+        "us-east-1"
+    )
+    recommendation_pricing_stale_hours: int = Field(default=48, ge=1, le=720)
+    report_storage_provider: Literal["local", "s3"] = "local"
+    report_local_directory: str = "/var/lib/cloudwise/reports"
+    report_s3_bucket: str | None = None
+    report_s3_prefix: str = "cloudwise-reports"
+    report_retention_days: int = Field(default=30, ge=1, le=365)
+    notification_provider: Literal["disabled", "ses"] = "disabled"
+    notification_ses_region: str = "us-east-1"
+    notification_from_email: str | None = Field(default=None, max_length=320)
     ai_advisor_enabled: bool = False
     ai_advisor_provider: Literal["bedrock"] = "bedrock"
     ai_advisor_model_id: str | None = None
@@ -70,6 +83,14 @@ class Settings(BaseSettings):
             == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         ):
             raise ValueError("external_id_encryption_key must be replaced in production")
+        if self.environment == "production" and self.recommendation_pricing_provider != "aws":
+            raise ValueError("recommendation_pricing_provider must be aws in production")
+        if self.environment == "production" and self.report_storage_provider != "s3":
+            raise ValueError("report_storage_provider must be s3 in production")
+        if self.report_storage_provider == "s3" and not self.report_s3_bucket:
+            raise ValueError("report_s3_bucket is required when report storage uses s3")
+        if self.notification_provider == "ses" and not self.notification_from_email:
+            raise ValueError("notification_from_email is required when SES is enabled")
         return self
 
 

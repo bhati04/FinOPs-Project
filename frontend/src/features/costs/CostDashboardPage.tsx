@@ -57,13 +57,13 @@ const groupingLabels: Record<CostGrouping, string> = {
 };
 
 const serviceColors = [
-  "#72d6c4",
-  "#34526f",
-  "#f4b860",
-  "#7968a8",
-  "#ef8354",
-  "#4f9da6",
-  "#a7a9ac",
+  "#5f8f7f",
+  "#aa8a50",
+  "#7a746a",
+  "#8b6f75",
+  "#b46c55",
+  "#5e8066",
+  "#969890",
 ];
 
 function categoryLabel(row: CostAggregate) {
@@ -228,6 +228,9 @@ export function CostDashboardPage() {
             <Stack direction="row" gap={1}>
               <Button component={Link} to="/metrics" variant="outlined">
                 Metrics
+              </Button>
+              <Button component={Link} to="/recommendations" variant="outlined">
+                Recommendations
               </Button>
               <Button component={Link} to="/aws-account" variant="outlined">
                 AWS accounts
@@ -475,10 +478,10 @@ export function CostDashboardPage() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="actual" fill="#72d6c4" name="Actual" />
+                      <Bar dataKey="actual" fill="#5f8f7f" name="Actual" />
                       <Line
                         dataKey="forecast"
-                        stroke="#34526f"
+                        stroke="#aa8a50"
                         strokeWidth={2}
                         name="Forecast"
                         connectNulls

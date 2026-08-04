@@ -11,6 +11,8 @@ allows high-load domains to be extracted later.
 Browser -> Frontend (nginx) -> FastAPI
                               |-> PostgreSQL
                               |-> Redis <- Celery worker
+                              |            ^ Celery beat scheduler
+                              |-> private report storage
 ```
 
 The API and worker access customer AWS accounts only through provider
@@ -28,10 +30,21 @@ contain explicit public schemas, application services, persistence models and
 repositories, and API routes or worker tasks as needed. Cross-domain imports
 must flow through public service contracts rather than persistence internals.
 
-Planned domains are identity, organizations, aws_accounts, scans, inventory,
-cost_management, metrics, recommendations, reports, notifications, audit, and
-platform_health. `ai_advisor` is an optional qualitative explanation service
-owned by the future recommendations domain; it is not a source of cost facts.
+Business domains include identity, organizations, aws_accounts, scans,
+inventory, cost_management, metrics, recommendations, reports, notifications,
+audit, and platform_health. `ai_advisor` is a disabled optional qualitative
+explanation service owned by the recommendations domain; it is not a source of
+cost facts.
+
+Recommendation pricing is owned by the recommendations domain behind a provider
+contract. Production reads the global AWS Price List with platform credentials;
+it never expands the customer assumed-role boundary.
+
+Cost Optimization Hub and Compute Optimizer imports remain behind normalized
+read-only provider contracts. Reports, schedules, notification deliveries, and
+audit events are owned by the `reports` domain. Production report objects use
+private S3 storage; SES and storage use platform credentials rather than a
+customer assumed role.
 
 ## Deployment direction
 

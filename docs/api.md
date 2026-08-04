@@ -102,3 +102,53 @@ and an optional `metric_name` filter.
 CloudWatch queries are batched at 500 metrics per request and paginated. The
 worker records only safe batch counts and lifecycle error codes; resource IDs,
 provider errors, credentials, and External IDs never enter logs.
+
+## Recommendation endpoints
+
+`POST /api/v1/recommendations/evaluate` runs the current deterministic rule set
+against active inventory belonging to the authenticated organization. An
+optional `connection_id` limits the evaluation to one organization-scoped AWS
+connection. Owners, administrators, and analysts may evaluate.
+
+`GET /api/v1/recommendations` returns organization-scoped findings. Optional
+`status`, `severity`, and `connection_id` query parameters filter the result.
+
+`PATCH /api/v1/recommendations/{recommendation_id}/status` changes a finding's
+review state and may include a comment. `POST
+/api/v1/recommendations/{recommendation_id}/comments` appends a review comment.
+Both operations require an owner, administrator, or analyst role.
+
+`GET /api/v1/recommendations/{recommendation_id}/activities` returns the
+finding's organization-scoped status and comment history. Recommendation
+evaluation reads only persisted customer inventory and never performs
+remediation. It may query the global AWS Price List with the CloudWise platform
+role; it does not assume or call the customer role during evaluation.
+
+Recommendation responses expose current monthly list cost, estimated monthly
+savings, currency, estimate type, pricing status, source and version,
+effective/retrieval timestamps, safe unavailable reason, and inspectable
+calculation inputs. Callers must treat `stale` and `unavailable` pricing
+explicitly and must not combine different currencies.
+
+## AWS recommendation source endpoints
+
+`POST /api/v1/recommendations/connections/{connection_id}/source-syncs` queues
+read-only Cost Optimization Hub and Compute Optimizer imports. `GET
+/api/v1/recommendations/source-syncs` lists tenant-scoped import history,
+including matched, unmatched, deduplicated, completed-source, and failed-source
+counts.
+
+## Reports and audit
+
+- `POST /api/v1/reports` queues an executive, cost-detail, or recommendation
+  report in CSV or PDF format.
+- `GET /api/v1/reports` lists tenant-scoped report history.
+- `GET /api/v1/reports/{report_id}/download` downloads a completed,
+  unexpired private report.
+- `POST /api/v1/reports/schedules` creates a daily, weekly, or monthly
+  recurring report.
+- `GET /api/v1/reports/schedules` lists recurring definitions.
+- `PATCH /api/v1/reports/schedules/{schedule_id}` enables or disables a
+  recurring definition.
+- `GET /api/v1/reports/audit` lists append-only audit history for owners and
+  administrators.

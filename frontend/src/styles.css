@@ -1,12 +1,27 @@
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  --shell: #f5f5f1;
+  --shell-soft: #eef1ec;
+  --brand-ink: #f4f7f3;
+  --brand: #356f61;
+  --line: rgba(31, 43, 36, 0.11);
+  --note: rgba(255, 255, 255, 0.74);
+}
+
+:root[data-theme="dark"] {
+  --shell: #151816;
+  --shell-soft: #1a1f1b;
+  --brand-ink: #17201b;
+  --brand: #8bcfba;
+  --line: rgba(235, 240, 235, 0.11);
+  --note: rgba(31, 36, 32, 0.82);
 }
 
 html {
   min-width: 320px;
   min-height: 100%;
-  background: #07111f;
+  background: var(--shell);
 }
 
 body {
@@ -19,66 +34,28 @@ body {
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(
-      circle at 82% 18%,
-      rgba(57, 111, 170, 0.2),
-      transparent 29rem
-    ),
-    radial-gradient(
-      circle at 4% 72%,
-      rgba(42, 157, 142, 0.13),
-      transparent 34rem
-    ),
-    linear-gradient(165deg, #07111f 0%, #0a1726 55%, #08131f 100%);
-}
-
-.app-shell::before {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  opacity: 0.035;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: linear-gradient(to bottom, black, transparent 75%);
+    radial-gradient(circle at 88% 8%, var(--shell-soft), transparent 28rem),
+    var(--shell);
 }
 
 .brand-mark {
   display: grid;
   width: 34px;
   height: 34px;
-  color: #07111f;
-  background: linear-gradient(135deg, #9af0df, #59d6c2);
-  border-radius: 10px;
+  color: var(--brand-ink);
+  background: var(--brand);
+  border-radius: 9px;
   place-items: center;
-  box-shadow: 0 8px 28px rgba(89, 214, 194, 0.2);
 }
 
 .status-card {
   position: relative;
   overflow: visible !important;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34) !important;
-}
-
-.status-card::before {
-  position: absolute;
-  z-index: -1;
-  inset: -1px;
-  content: "";
-  background: linear-gradient(
-    135deg,
-    rgba(89, 214, 194, 0.35),
-    transparent 45%
-  );
-  border-radius: inherit;
-  filter: blur(10px);
 }
 
 .service-row {
   padding: 0.8rem 0;
-  border-bottom: 1px solid rgba(153, 186, 218, 0.1);
+  border-bottom: 1px solid var(--line);
 }
 
 .pulse {
@@ -89,20 +66,18 @@ body {
 }
 
 .pulse.ready {
-  background: #58d49d;
-  box-shadow:
-    0 0 0 8px rgba(88, 212, 157, 0.1),
-    0 0 24px rgba(88, 212, 157, 0.55);
+  background: #4f9d68;
+  box-shadow: 0 0 0 7px rgba(79, 157, 104, 0.12);
 }
 
 .pulse.unavailable {
-  background: #ff7b82;
-  box-shadow: 0 0 0 8px rgba(255, 123, 130, 0.1);
+  background: #c55f5f;
+  box-shadow: 0 0 0 7px rgba(197, 95, 95, 0.12);
 }
 
 .foundation-note {
   padding: 1.25rem 1.5rem;
-  background: rgba(8, 23, 38, 0.68);
-  border: 1px solid rgba(153, 186, 218, 0.13);
-  border-radius: 14px;
+  background: var(--note);
+  border: 1px solid var(--line);
+  border-radius: 12px;
 }

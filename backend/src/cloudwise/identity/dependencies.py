@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +25,7 @@ def get_identity_service(
 
 
 async def get_current_user(
+    request: Request,
     token: Annotated[str, Depends(oauth2_scheme)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AuthenticatedUser:
@@ -53,13 +54,16 @@ async def get_current_user(
     if row is None:
         raise unauthorized
     user, membership, organization = row
-    return AuthenticatedUser(
+    authenticated = AuthenticatedUser(
         user_id=user.id,
         email=user.email,
         organization_id=organization.id,
         organization_name=organization.name,
         role=membership.role,
     )
+    request.state.audit_actor_user_id = authenticated.user_id
+    request.state.audit_organization_id = authenticated.organization_id
+    return authenticated
 
 
 CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]

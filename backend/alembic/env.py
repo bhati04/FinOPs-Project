@@ -13,6 +13,8 @@ from cloudwise.cost_management import models as cost_models  # noqa: F401
 from cloudwise.identity import models as identity_models  # noqa: F401
 from cloudwise.metrics import models as metric_models  # noqa: F401
 from cloudwise.organizations import models as organization_models  # noqa: F401
+from cloudwise.recommendations import models as recommendation_models  # noqa: F401
+from cloudwise.reports import models as report_models  # noqa: F401
 from cloudwise.scans import models as scan_models  # noqa: F401
 
 config = context.config

@@ -1,10 +1,14 @@
 """Request safety and observability middleware."""
 
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import structlog
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from cloudwise.core.database import get_session_factory
+from cloudwise.reports.models import AuditEvent
 
 CORRELATION_HEADER = "X-Correlation-ID"
 
@@ -28,6 +32,7 @@ class CorrelationIdMiddleware:
             correlation_id = str(uuid4())
 
         tokens = structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
+        scope.setdefault("state", {})["correlation_id"] = correlation_id
 
         async def send_with_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
@@ -91,3 +96,61 @@ class RequestSizeLimitMiddleware:
             }
         )
         await send({"type": "http.response.body", "body": body})
+
+
+class AuditTrailMiddleware:
+    """Persist one append-only event for each authenticated API mutation."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope.get("method") not in {
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+        }:
+            await self.app(scope, receive, send)
+            return
+        response_status = 500
+
+        async def capture_status(message: Message) -> None:
+            nonlocal response_status
+            if message["type"] == "http.response.start":
+                response_status = int(message["status"])
+            await send(message)
+
+        await self.app(scope, receive, capture_status)
+        state = scope.get("state", {})
+        organization_id = state.get("audit_organization_id")
+        actor_user_id = state.get("audit_actor_user_id")
+        correlation_id = state.get("correlation_id")
+        if not organization_id or not actor_user_id or not correlation_id:
+            return
+        route = scope.get("route")
+        route_path = str(getattr(route, "path", scope.get("path", "unknown")))
+        entity_type = _entity_type(route_path)
+        try:
+            session_factory = get_session_factory()
+            async with session_factory() as session:
+                session.add(
+                    AuditEvent(
+                        organization_id=organization_id,
+                        actor_user_id=actor_user_id,
+                        action=f"{str(scope.get('method')).lower()}:{route_path}",
+                        entity_type=entity_type,
+                        outcome="success" if response_status < 400 else "rejected",
+                        correlation_id=UUID(correlation_id),
+                        context={"http_status": response_status},
+                        created_at=datetime.now(UTC),
+                    )
+                )
+                await session.commit()
+        except Exception:
+            structlog.get_logger().exception("audit_event_persistence_failed")
+
+
+def _entity_type(route_path: str) -> str:
+    parts = [part for part in route_path.split("/") if part and not part.startswith("{")]
+    return (parts[2] if len(parts) > 2 and parts[:2] == ["api", "v1"] else parts[0])[:80]

@@ -135,6 +135,7 @@ class AWSInventoryProvider:
                             "volume_type": volume["VolumeType"],
                             "encrypted": volume.get("Encrypted", False),
                             "iops": volume.get("Iops"),
+                            "throughput_mibps": volume.get("Throughput"),
                             "attachments": [
                                 attachment.get("InstanceId")
                                 for attachment in volume.get("Attachments", [])
@@ -186,6 +187,9 @@ class AWSInventoryProvider:
                         "instance_id": address.get("InstanceId"),
                         "network_interface_id": address.get("NetworkInterfaceId"),
                         "domain": address.get("Domain"),
+                        "public_ipv4_pool": address.get("PublicIpv4Pool"),
+                        "customer_owned_ip": address.get("CustomerOwnedIp"),
+                        "customer_owned_ipv4_pool": address.get("CustomerOwnedIpv4Pool"),
                         "tags": self._tags(address.get("Tags")),
                     },
                 }

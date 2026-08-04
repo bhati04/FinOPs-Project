@@ -5,12 +5,16 @@ multi-account AWS cost visibility and governance. The current repository
 implements the platform foundation, organization-scoped identity, secure AWS
 role onboarding, asynchronous read-only multi-service AWS inventory scans, and
 tenant-scoped Cost Explorer actuals, forecasts, and CloudWatch resource
-metrics.
+metrics. Milestones 6 and 7 add deterministic and AWS-native recommendations,
+canonical deduplication, versioned estimates, private CSV/PDF reports,
+scheduled email delivery, retention, and an immutable organization audit log.
+The interface now uses a restrained neutral palette with a persistent
+light/dark theme switch.
 
-> Recommendation rules, reports, and automated remediation are not implemented
-> yet. A disabled, unexposed AI-advisor provider foundation
-> exists for a future user-clicked recommendation explanation; it does not call
-> a model during scans or page loads.
+> Additional rule families, realized-savings measurement, and automated
+> remediation are not implemented yet. A disabled, unexposed AI-advisor
+> provider foundation exists for a future user-clicked explanation; it does not
+> call a model during evaluation, scans, or page loads.
 
 ## Architecture at a glance
 
@@ -86,8 +90,8 @@ For the complete EC2 deployment and product-readiness checklist, see
 | 3 | Inventory persistence and scan orchestration | Implemented |
 | 4 | Broader real AWS inventory | In progress: core services, one Region per scan |
 | 5 | Cost and metrics | Implemented |
-| 6 | Recommendation engine | Not started |
-| 7 | Reports, notifications, and audit | Not started |
+| 6 | Recommendation engine | Implemented |
+| 7 | Reports, notifications, and audit | Implemented |
 | 8 | Production hardening and deployment | Not started |
 
-Each later milestone still requires review before its scope is expanded.
+Milestone 8 still requires review before its scope is expanded.

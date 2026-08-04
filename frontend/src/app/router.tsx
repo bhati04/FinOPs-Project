@@ -6,6 +6,8 @@ import { LoginPage } from "../features/identity/LoginPage";
 import { RequireAuth } from "../features/identity/RequireAuth";
 import { MetricsPage } from "../features/metrics/MetricsPage";
 import { FoundationPage } from "../features/platform-health/FoundationPage";
+import { RecommendationsPage } from "../features/recommendations/RecommendationsPage";
+import { ReportsPage } from "../features/reports/ReportsPage";
 import { NotFoundPage } from "./NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -32,6 +34,22 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <MetricsPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/recommendations",
+    element: (
+      <RequireAuth>
+        <RecommendationsPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/reports",
+    element: (
+      <RequireAuth>
+        <ReportsPage />
       </RequireAuth>
     ),
   },

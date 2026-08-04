@@ -51,6 +51,7 @@ services:
     volumes:
       - ./backend/src:/app/src:ro
       - ./backend/tests:/app/tests:ro
+      - report-data:/var/lib/cloudwise/reports
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,6 +96,8 @@ services:
       CLOUDWISE_DATABASE_URL: ${CLOUDWISE_DATABASE_URL:-postgresql+asyncpg://cloudwise:cloudwise@postgres:5432/cloudwise}
       CLOUDWISE_REDIS_URL: ${CLOUDWISE_REDIS_URL:-redis://redis:6379/0}
       CLOUDWISE_CORS_ORIGINS: ${CLOUDWISE_CORS_ORIGINS:-["http://localhost:5173","http://localhost:8080"]}
+    volumes:
+      - report-data:/var/lib/cloudwise/reports
     depends_on:
       postgres:
         condition: service_healthy
@@ -110,6 +113,32 @@ services:
       timeout: 8s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  scheduler:
+    build:
+      context: ./backend
+      target: production
+    command:
+      [
+        "celery",
+        "-A",
+        "cloudwise.worker:celery_app",
+        "beat",
+        "--loglevel=INFO",
+      ]
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - report-data:/var/lib/cloudwise/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -156,3 +185,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  report-data:

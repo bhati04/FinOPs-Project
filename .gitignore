@@ -12,6 +12,7 @@ __pycache__/
 .coverage
 htmlcov/
 .venv/
+.pytools/
 
 # JavaScript
 node_modules/
@@ -28,4 +29,3 @@ crash.log
 .vscode/
 .DS_Store
 Thumbs.db
-

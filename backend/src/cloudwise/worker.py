@@ -13,6 +13,8 @@ celery_app = Celery(
         "cloudwise.scans.tasks",
         "cloudwise.cost_management.tasks",
         "cloudwise.metrics.tasks",
+        "cloudwise.recommendations.tasks",
+        "cloudwise.reports.tasks",
     ],
 )
 celery_app.conf.update(
@@ -24,4 +26,14 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
+    beat_schedule={
+        "dispatch-due-reports": {
+            "task": "cloudwise.reports.dispatch_due_reports",
+            "schedule": 300.0,
+        },
+        "expire-reports": {
+            "task": "cloudwise.reports.expire_reports",
+            "schedule": 3600.0,
+        },
+    },
 )

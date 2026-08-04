@@ -86,6 +86,9 @@ CLOUDWISE_REDIS_URL=redis://redis:6379/0
 
 CLOUDWISE_CORS_ORIGINS=["https://cloudwise.example.com"]
 CLOUDWISE_API_REQUEST_MAX_BYTES=1048576
+CLOUDWISE_RECOMMENDATION_PRICING_PROVIDER=aws
+CLOUDWISE_RECOMMENDATION_PRICING_ENDPOINT_REGION=us-east-1
+CLOUDWISE_RECOMMENDATION_PRICING_STALE_HOURS=48
 
 # Keep disabled until Milestone 6 exposes an authenticated, tenant-scoped
 # Generate AI suggestion action.
@@ -227,6 +230,7 @@ The application compute role will eventually require:
 - Read access to application secrets.
 - KMS decrypt permission for the application encryption key.
 - CloudWatch Logs and custom-metric permissions.
+- `pricing:GetProducts` on `*` for versioned recommendation list pricing.
 - Access to the report S3 bucket.
 - SES permissions if email delivery is enabled.
 

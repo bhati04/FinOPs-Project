@@ -49,3 +49,9 @@ Copy `.env.example` to `.env` for local overrides. Startup validation fails
 fast for unsupported environments, invalid database drivers, invalid URLs, or
 unsafe request-size values. Production secrets must not be stored in `.env`.
 
+Recommendation pricing defaults to the visibly labelled `mock` catalog for
+local development. Set
+`CLOUDWISE_RECOMMENDATION_PRICING_PROVIDER=aws` to query AWS Price List with the
+native credential chain. Production startup requires `aws`; its execution role
+must allow `pricing:GetProducts`. The endpoint Region can be `us-east-1`,
+`eu-central-1`, or `ap-south-1` and does not determine the product Region.

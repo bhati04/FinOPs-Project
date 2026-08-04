@@ -151,6 +151,9 @@ export function MetricsPage() {
               <Button component={Link} to="/costs" variant="outlined">
                 Costs
               </Button>
+              <Button component={Link} to="/recommendations" variant="outlined">
+                Recommendations
+              </Button>
               <Button component={Link} to="/aws-account" variant="outlined">
                 AWS accounts
               </Button>
@@ -346,7 +349,7 @@ export function MetricsPage() {
                       <Line
                         type="monotone"
                         dataKey="value"
-                        stroke="#34526f"
+                        stroke="#5f8f7f"
                         strokeWidth={2}
                         dot={false}
                       />

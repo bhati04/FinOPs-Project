@@ -11,7 +11,11 @@ from cloudwise.api.router import api_router
 from cloudwise.core.config import get_settings
 from cloudwise.core.database import dispose_engine
 from cloudwise.core.logging import configure_logging
-from cloudwise.core.middleware import CorrelationIdMiddleware, RequestSizeLimitMiddleware
+from cloudwise.core.middleware import (
+    AuditTrailMiddleware,
+    CorrelationIdMiddleware,
+    RequestSizeLimitMiddleware,
+)
 from cloudwise.core.redis import close_redis
 
 
@@ -50,6 +54,7 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(RequestSizeLimitMiddleware, max_bytes=settings.api_request_max_bytes)
     app.add_middleware(CorrelationIdMiddleware)
+    app.add_middleware(AuditTrailMiddleware)
     app.include_router(api_router, prefix="/api/v1")
     return app
 

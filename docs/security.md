@@ -59,9 +59,15 @@ service boundaries.
 Milestone 2 must encrypt External IDs using an application key backed by Secrets
 Manager or KMS in production. Customer AWS access must use STS AssumeRole only.
 
-Milestone 6 must add organization authorization, request throttling, generation
+Any future AI endpoint must add organization authorization, request throttling, generation
 budgets, tenant-scoped caching, audit records, and retention controls before an
 AI suggestion endpoint is exposed.
+
+Milestone 7 mutation auditing is implemented by authenticated request
+middleware and protected by a PostgreSQL trigger that rejects audit-event
+updates and deletes. Audit context is deliberately bounded to safe route and
+status metadata. Private report downloads recheck organization ownership and
+expiration before reading local or S3 storage.
 
 ## Reporting
 
