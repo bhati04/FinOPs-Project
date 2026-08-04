@@ -1,6 +1,5 @@
 """Celery tasks for read-only customer inventory collection."""
 
-import asyncio
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -15,7 +14,7 @@ from cloudwise.aws_accounts.encryption import ExternalIdCipher
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
 from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.core.config import get_settings
-from cloudwise.core.database import get_session_factory
+from cloudwise.core.database import get_session_factory, run_async_job
 from cloudwise.identity import models as identity_models  # noqa: F401
 from cloudwise.inventory.provider import AWSInventoryProvider, NormalizedResource
 from cloudwise.organizations import models as organization_models  # noqa: F401
@@ -37,10 +36,10 @@ class ScanLockUnavailable(RuntimeError):
 def run_inventory_scan(task: Task, scan_id: str) -> None:
     """Run one scan while holding a per-connection Redis lock."""
     try:
-        asyncio.run(_run_inventory_scan(UUID(scan_id)))
+        run_async_job(_run_inventory_scan(UUID(scan_id)))
     except ScanLockUnavailable as exc:
         if task.request.retries >= 30:
-            asyncio.run(_fail_scan(UUID(scan_id), "SCAN_LOCK_TIMEOUT"))
+            run_async_job(_fail_scan(UUID(scan_id), "SCAN_LOCK_TIMEOUT"))
             return
         raise task.retry(exc=exc, countdown=30) from exc
 

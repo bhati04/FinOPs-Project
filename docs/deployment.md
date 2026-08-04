@@ -17,7 +17,9 @@ The worker and API must share the configured local report volume outside
 production. Production must set `CLOUDWISE_REPORT_STORAGE_PROVIDER=s3` and
 `CLOUDWISE_REPORT_S3_BUCKET`. Run exactly one Celery beat scheduler using
 `cloudwise.worker:celery_app`; it dispatches scheduled reports and expiration
-cleanup.
+cleanup. The scheduler stores its local Celery Beat state under `/tmp` because
+the production image runs as a non-root user and `/app` is intentionally not
+writable.
 
 SES delivery is optional. Enable it with
 `CLOUDWISE_NOTIFICATION_PROVIDER=ses`,

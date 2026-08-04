@@ -1,6 +1,5 @@
 """Asynchronous generation, scheduling, delivery, and expiration tasks."""
 
-import asyncio
 import hashlib
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
@@ -11,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cloudwise.core.config import get_settings
-from cloudwise.core.database import get_session_factory
+from cloudwise.core.database import get_session_factory, run_async_job
 from cloudwise.cost_management.models import CostAggregate, CostGranularity, CostGrouping
 from cloudwise.recommendations.models import Recommendation, RecommendationStatus
 from cloudwise.reports.models import (
@@ -37,19 +36,19 @@ logger = structlog.get_logger()
 @celery_app.task(name="cloudwise.reports.generate_report")  # type: ignore[untyped-decorator]
 def generate_report(report_id: str) -> None:
     """Generate and privately store one report."""
-    asyncio.run(_generate_report(UUID(report_id)))
+    run_async_job(_generate_report(UUID(report_id)))
 
 
 @celery_app.task(name="cloudwise.reports.dispatch_due_reports")  # type: ignore[untyped-decorator]
 def dispatch_due_reports() -> None:
     """Create jobs for database schedules that are due."""
-    asyncio.run(_dispatch_due_reports())
+    run_async_job(_dispatch_due_reports())
 
 
 @celery_app.task(name="cloudwise.reports.expire_reports")  # type: ignore[untyped-decorator]
 def expire_reports() -> None:
     """Delete expired report objects and retain their metadata."""
-    asyncio.run(_expire_reports())
+    run_async_job(_expire_reports())
 
 
 async def _generate_report(report_id: UUID) -> None:

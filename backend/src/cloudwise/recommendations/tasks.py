@@ -1,6 +1,5 @@
 """Celery tasks for read-only AWS recommendation synchronization."""
 
-import asyncio
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -12,7 +11,7 @@ from cloudwise.aws_accounts.encryption import ExternalIdCipher
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
 from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.core.config import get_settings
-from cloudwise.core.database import get_session_factory
+from cloudwise.core.database import get_session_factory, run_async_job
 from cloudwise.identity import models as identity_models  # noqa: F401
 from cloudwise.organizations import models as organization_models  # noqa: F401
 from cloudwise.recommendations.external import (
@@ -36,7 +35,7 @@ logger = structlog.get_logger()
 @celery_app.task(name="cloudwise.recommendations.sync_aws_recommendations")  # type: ignore[untyped-decorator]
 def sync_aws_recommendations(sync_id: str) -> None:
     """Run a persisted AWS recommendation sync."""
-    asyncio.run(_sync_aws_recommendations(UUID(sync_id)))
+    run_async_job(_sync_aws_recommendations(UUID(sync_id)))
 
 
 async def _sync_aws_recommendations(sync_id: UUID) -> None:

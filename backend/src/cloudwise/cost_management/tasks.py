@@ -1,6 +1,5 @@
 """Celery Cost Explorer synchronization tasks."""
 
-import asyncio
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
@@ -12,7 +11,7 @@ from cloudwise.aws_accounts.encryption import ExternalIdCipher
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
 from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.core.config import get_settings
-from cloudwise.core.database import get_session_factory
+from cloudwise.core.database import get_session_factory, run_async_job
 from cloudwise.cost_management.models import (
     CostAggregate,
     CostForecast,
@@ -47,7 +46,7 @@ def _forecast_windows(
 @celery_app.task(name="cloudwise.costs.synchronize")  # type: ignore[untyped-decorator]
 def synchronize_costs(sync_id: str) -> None:
     """Synchronize daily and monthly Cost Explorer aggregates."""
-    asyncio.run(_synchronize_costs(UUID(sync_id)))
+    run_async_job(_synchronize_costs(UUID(sync_id)))
 
 
 async def _synchronize_costs(sync_id: UUID) -> None:

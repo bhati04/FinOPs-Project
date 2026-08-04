@@ -1,6 +1,5 @@
 """Celery CloudWatch resource metric synchronization tasks."""
 
-import asyncio
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -12,7 +11,7 @@ from cloudwise.aws_accounts.encryption import ExternalIdCipher
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
 from cloudwise.aws_accounts.provider import AWSProvider, AWSProviderError
 from cloudwise.core.config import get_settings
-from cloudwise.core.database import get_session_factory
+from cloudwise.core.database import get_session_factory, run_async_job
 from cloudwise.identity import models as identity_models  # noqa: F401
 from cloudwise.metrics.models import MetricSync, MetricSyncStatus, ResourceMetric
 from cloudwise.metrics.provider import RESOURCE_METRICS, AWSMetricProvider, MetricResource
@@ -26,7 +25,7 @@ logger = structlog.get_logger()
 @celery_app.task(name="cloudwise.metrics.synchronize")  # type: ignore[untyped-decorator]
 def synchronize_metrics(sync_id: str) -> None:
     """Synchronize bounded CloudWatch history for active inventory resources."""
-    asyncio.run(_synchronize_metrics(UUID(sync_id)))
+    run_async_job(_synchronize_metrics(UUID(sync_id)))
 
 
 async def _synchronize_metrics(sync_id: UUID) -> None:
