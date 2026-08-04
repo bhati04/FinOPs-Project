@@ -9,6 +9,7 @@ import pytest
 
 from cloudwise.aws_accounts.models import AWSAccountConnection, ConnectionStatus
 from cloudwise.core.database import Base
+from cloudwise.scans import tasks as scan_tasks
 from cloudwise.scans.models import InventoryScan, ScanStatus
 from cloudwise.scans.service import InventoryScanService
 from cloudwise.scans.tasks import _resource_values
@@ -83,3 +84,23 @@ def test_resource_values_are_json_safe_and_tenant_scoped() -> None:
     assert values["is_active"] is True
     details = cast(dict[str, object], values["details"])
     assert details["launch_time"] == launch_time.isoformat()
+
+
+def test_unexpected_worker_failure_marks_scan_failed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A task-level failure must not leave an inventory scan permanently queued."""
+    scan_id = uuid4()
+    failure_updates: list[tuple[object, str]] = []
+
+    async def fail_scan_task(_scan_id: object) -> None:
+        raise RuntimeError("worker failed")
+
+    async def record_failure(scan_id_value: object, error_code: str) -> None:
+        failure_updates.append((scan_id_value, error_code))
+
+    monkeypatch.setattr(scan_tasks, "_run_inventory_scan", fail_scan_task)
+    monkeypatch.setattr(scan_tasks, "_fail_scan", record_failure)
+
+    with pytest.raises(RuntimeError, match="worker failed"):
+        scan_tasks.run_inventory_scan.run(str(scan_id))
+
+    assert failure_updates == [(scan_id, "INVENTORY_WORKER_FAILED")]

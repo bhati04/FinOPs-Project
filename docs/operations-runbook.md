@@ -26,3 +26,12 @@ exactly one Celery beat scheduler is active. Failed jobs retain a safe
 `error_code`; report contents and recipients must not appear in logs. The
 hourly expiration task should transition completed expired reports to
 `expired` after deleting their private object.
+
+## Queued inventory scans
+
+The worker disposes its async database pool after each synchronous Celery task
+entrypoint so connections are never reused by a later task's event loop. An
+unexpected inventory task failure records `INVENTORY_WORKER_FAILED` instead of
+leaving the scan indefinitely queued. Confirm that
+`cloudwise.scans.run_inventory_scan` is registered before redispatching a task
+that was lost during an earlier worker outage.

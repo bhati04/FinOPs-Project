@@ -35,13 +35,21 @@ class ScanLockUnavailable(RuntimeError):
 )
 def run_inventory_scan(task: Task, scan_id: str) -> None:
     """Run one scan while holding a per-connection Redis lock."""
+    scan_uuid = UUID(scan_id)
     try:
-        run_async_job(_run_inventory_scan(UUID(scan_id)))
+        run_async_job(_run_inventory_scan(scan_uuid))
     except ScanLockUnavailable as exc:
         if task.request.retries >= 30:
-            run_async_job(_fail_scan(UUID(scan_id), "SCAN_LOCK_TIMEOUT"))
+            run_async_job(_fail_scan(scan_uuid, "SCAN_LOCK_TIMEOUT"))
             return
         raise task.retry(exc=exc, countdown=30) from exc
+    except Exception:
+        logger.exception("inventory_scan_task_failed")
+        try:
+            run_async_job(_fail_scan(scan_uuid, "INVENTORY_WORKER_FAILED"))
+        except Exception:
+            logger.exception("inventory_scan_failure_status_update_failed")
+        raise
 
 
 async def _run_inventory_scan(scan_id: UUID) -> None:
