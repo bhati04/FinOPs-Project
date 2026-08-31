@@ -1,8 +1,9 @@
 """Regression tests for migration-specific PostgreSQL DDL contracts."""
 
+from collections.abc import Callable
 from pathlib import Path
 from runpy import run_path
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 from sqlalchemy.dialects import postgresql
 
