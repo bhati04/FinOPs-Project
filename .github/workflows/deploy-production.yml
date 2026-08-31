@@ -298,10 +298,10 @@ jobs:
           remote_script="${remote_header}${remote_body}"
 
           # Convert the complete script into one shell-safe Bash argument.
-          # The final -r is required to prevent JSON quotes from being included.
+          # Raw output prevents JSON quotes from being included.
           quoted_script=$(
             printf '%s' "$remote_script" |
-              jq -Rrsr '@sh'
+              jq --raw-input --slurp --raw-output '@sh'
           )
 
           parameters=$(
