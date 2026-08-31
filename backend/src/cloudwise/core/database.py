@@ -68,10 +68,10 @@ async def dispose_engine() -> None:
         _session_factory = None
 
 
-def run_async_job[_ResultT](awaitable: Awaitable[_ResultT]) -> _ResultT:
+def run_async_job[ResultT](awaitable: Awaitable[ResultT]) -> ResultT:
     """Run one synchronous worker entrypoint without leaking its pool across event loops."""
 
-    async def run_and_dispose() -> _ResultT:
+    async def run_and_dispose() -> ResultT:
         try:
             return await awaitable
         finally:
