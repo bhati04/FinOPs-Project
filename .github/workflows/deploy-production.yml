@@ -228,7 +228,7 @@ jobs:
           remote_script="${remote_header}${remote_body}"
 
           # SSM may use /bin/sh; explicitly execute our script with Bash.
-          quoted_script=$(printf '%s' "$remote_script" | jq -Rs '@sh')
+          quoted_script=$(printf '%s' "$remote_script" | jq -Rrs '@sh')
 
           parameters=$(jq -cn \
             --arg command "bash -c ${quoted_script}" \
