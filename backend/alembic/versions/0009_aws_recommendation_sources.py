@@ -4,11 +4,25 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "0009_aws_recommendation_sources"
 down_revision: str | None = "0008_recommendation_pricing"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
+
+
+def _recommendation_sync_status(*, create_type: bool) -> postgresql.ENUM:
+    """Build the shared PostgreSQL enum with explicit DDL ownership."""
+    return postgresql.ENUM(
+        "QUEUED",
+        "RUNNING",
+        "COMPLETED",
+        "PARTIAL",
+        "FAILED",
+        name="recommendation_sync_status",
+        create_type=create_type,
+    )
 
 
 def upgrade() -> None:
@@ -51,14 +65,7 @@ def upgrade() -> None:
         ["organization_id", "inventory_resource_id", "canonical_action"],
     )
 
-    sync_status = sa.Enum(
-        "QUEUED",
-        "RUNNING",
-        "COMPLETED",
-        "PARTIAL",
-        "FAILED",
-        name="recommendation_sync_status",
-    )
+    sync_status = _recommendation_sync_status(create_type=True)
     sync_status.create(op.get_bind(), checkfirst=True)
     op.create_table(
         "recommendation_source_syncs",
@@ -67,7 +74,11 @@ def upgrade() -> None:
         sa.Column("connection_id", sa.Uuid(), nullable=False),
         sa.Column("requested_by_user_id", sa.Uuid(), nullable=False),
         sa.Column("region", sa.String(30), nullable=False),
-        sa.Column("status", sync_status, nullable=False),
+        sa.Column(
+            "status",
+            _recommendation_sync_status(create_type=False),
+            nullable=False,
+        ),
         sa.Column("imported_count", sa.Integer(), nullable=False),
         sa.Column("matched_resource_count", sa.Integer(), nullable=False),
         sa.Column("unmatched_resource_count", sa.Integer(), nullable=False),
