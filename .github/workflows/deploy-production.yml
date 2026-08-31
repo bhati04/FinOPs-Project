@@ -18,8 +18,15 @@ concurrency:
 jobs:
   deploy:
     name: Run deployment on EC2
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: production
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
@@ -27,78 +34,141 @@ jobs:
       EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
       EC2_DEPLOY_PATH: ${{ vars.EC2_DEPLOY_PATH }}
       APPLICATION_BASE_URL: ${{ vars.APPLICATION_BASE_URL }}
+      AWS_PAGER: ""
     steps:
       - name: Validate deployment inputs
         shell: bash
         run: |
           set -euo pipefail
           for value in AWS_REGION DEPLOY_SHA EC2_INSTANCE_ID EC2_DEPLOY_PATH; do
-            test -n "${!value:-}" || { echo "Missing required production variable: ${value}"; exit 1; }
+            test -n "${!value:-}" || { echo "Missing production variable: ${value}"; exit 1; }
           done
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid deployment SHA'; exit 1; }
+          [[ "$EC2_DEPLOY_PATH" == /* && "$EC2_DEPLOY_PATH" != / ]] || { echo 'Use an absolute application directory'; exit 1; }
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Expected default OIDC subject: repo:${GITHUB_REPOSITORY}:environment:production"
 
       - name: Configure AWS credentials through OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          # Copy the exact ARN from IAM if this role has a path.
+          role-to-assume: arn:aws:iam::354280291309:role/CloudWiseEC2Deployment
           aws-region: ${{ vars.AWS_REGION }}
+          audience: sts.amazonaws.com
+          allowed-account-ids: '354280291309'
+          role-session-name: GitHubDeploy-${{ github.run_id }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Fetch, build, migrate, and deploy on EC2
         id: deploy
         shell: bash
         run: |
           set -euo pipefail
-          remote_script=$(cat <<SCRIPT
+          # Quote input values for Bash; do not interpolate them into script source.
+          printf -v remote_header 'deploy_path=%q\ndeploy_sha=%q\napplication_base_url=%q\n' \
+            "$EC2_DEPLOY_PATH" "$DEPLOY_SHA" "$APPLICATION_BASE_URL"
+          remote_body=$(cat <<'SCRIPT'
           set -Eeuo pipefail
-          deploy_path='${EC2_DEPLOY_PATH}'
-          deploy_sha='${DEPLOY_SHA}'
-          application_base_url='${APPLICATION_BASE_URL}'
-          cd "\${deploy_path}"
-          test -f docker-compose.yml
+          cd "$deploy_path"
           test -f .env
           command -v git >/dev/null
           command -v docker >/dev/null
+          command -v flock >/dev/null
           docker compose version >/dev/null
-          if [ -z "\${application_base_url}" ]; then
-            imds_token=\$(curl --fail --silent --show-error --request PUT --header 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token)
-            public_ip=\$(curl --fail --silent --show-error --header "X-aws-ec2-metadata-token: \${imds_token}" http://169.254.169.254/latest/meta-data/public-ipv4)
-            application_base_url="http://\${public_ip}"
-          fi
-          application_base_url="\${application_base_url%/}"
-          sudo -u ubuntu -H git -C "\${deploy_path}" diff --quiet
-          sudo -u ubuntu -H git -C "\${deploy_path}" diff --cached --quiet
-          sudo -u ubuntu -H git -C "\${deploy_path}" fetch --prune origin "\${deploy_sha}"
-          sudo -u ubuntu -H git -C "\${deploy_path}" checkout --detach "\${deploy_sha}"
-          test -f docker-compose.production.yml
           mkdir -p .deploy
-          previous_revision=\$(cat .deploy/current-revision 2>/dev/null || true)
+          exec 9>.deploy/deployment.lock
+          flock -n 9 || { echo 'Another deployment is still running on EC2'; exit 1; }
+
+          if [ -z "$application_base_url" ]; then
+            imds_token=$(curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --request PUT --header 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token)
+            public_ip=$(curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --header "X-aws-ec2-metadata-token: ${imds_token}" http://169.254.169.254/latest/meta-data/public-ipv4)
+            application_base_url="http://${public_ip}"
+          fi
+          application_base_url="${application_base_url%/}"
+          sudo -u ubuntu -H git -C "$deploy_path" diff --quiet
+          sudo -u ubuntu -H git -C "$deploy_path" diff --cached --quiet
+          sudo -u ubuntu -H git -C "$deploy_path" fetch --prune origin "$deploy_sha"
+          sudo -u ubuntu -H git -C "$deploy_path" checkout --detach "$deploy_sha"
+          test -f docker-compose.production.yml
+          previous_revision=$(cat .deploy/current-revision 2>/dev/null || true)
+
+          # Best-effort image rollback only: this does NOT undo database migrations
+          # or restore a previous Compose configuration. Keep migrations compatible.
           rollback() {
-            if [ -n "\${previous_revision}" ]; then
-              export CLOUDWISE_IMAGE_TAG="\${previous_revision}"
-              export VITE_API_BASE_URL="\${application_base_url}/api/v1"
-              docker compose -f docker-compose.production.yml up -d --no-build --no-deps backend worker scheduler frontend
+            rc=$?
+            trap - ERR
+            if [ -n "$previous_revision" ]; then
+              echo 'Deployment failed; attempting previous application images'
+              export CLOUDWISE_IMAGE_TAG="$previous_revision"
+              export VITE_API_BASE_URL="${application_base_url}/api/v1"
+              docker compose -f docker-compose.production.yml up -d --no-build --no-deps backend worker scheduler frontend || echo 'Image rollback failed; manual intervention required'
+            else
+              echo 'No previous revision recorded; automatic image rollback unavailable'
             fi
+            exit "$rc"
           }
           trap rollback ERR
-          export CLOUDWISE_IMAGE_TAG="\${deploy_sha}"
-          export VITE_API_BASE_URL="\${application_base_url}/api/v1"
+          export CLOUDWISE_IMAGE_TAG="$deploy_sha"
+          export VITE_API_BASE_URL="${application_base_url}/api/v1"
           docker compose -f docker-compose.production.yml config --quiet
           docker compose -f docker-compose.production.yml build --pull backend frontend
           docker compose -f docker-compose.production.yml run --rm --no-deps backend alembic upgrade head
           docker compose -f docker-compose.production.yml up -d --no-build --no-deps --remove-orphans backend worker scheduler frontend
           docker compose -f docker-compose.production.yml ps
-          curl --fail --silent --show-error --retry 12 --retry-delay 10 http://127.0.0.1:8000/api/v1/health/live
-          curl --fail --silent --show-error --retry 12 --retry-delay 10 http://127.0.0.1:8000/api/v1/health/ready
-          printf '%s\n' "\${deploy_sha}" > .deploy/current-revision
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 12 --retry-delay 10 --retry-connrefused http://127.0.0.1:8000/api/v1/health/live
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 12 --retry-delay 10 --retry-connrefused http://127.0.0.1:8000/api/v1/health/ready
+          printf '%s\n' "$deploy_sha" > .deploy/current-revision
           trap - ERR
           SCRIPT
           )
-          parameters=$(jq -cn --arg command "${remote_script}" '{commands:[$command]}')
-          command_id=$(aws ssm send-command --instance-ids "${EC2_INSTANCE_ID}" --document-name AWS-RunShellScript --comment "Deploy CloudWise ${DEPLOY_SHA}" --parameters "${parameters}" --query 'Command.CommandId' --output text)
-          echo "command_id=${command_id}" >> "${GITHUB_OUTPUT}"
-          aws ssm wait command-executed --command-id "${command_id}" --instance-id "${EC2_INSTANCE_ID}"
-          status=$(aws ssm get-command-invocation --command-id "${command_id}" --instance-id "${EC2_INSTANCE_ID}" --query Status --output text)
-          test "${status}" = "Success"
+          remote_script="${remote_header}${remote_body}"
+          # AWS-RunShellScript may use /bin/sh; explicitly run our script with Bash.
+          quoted_script=$(printf '%s' "$remote_script" | jq -Rs '@sh')
+          parameters=$(jq -cn --arg command "bash -c ${quoted_script}" \
+            '{commands:[$command],executionTimeout:["2700"]}')
+          command_id=$(aws ssm send-command \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --timeout-seconds 120 \
+            --comment "Deploy CloudWise ${DEPLOY_SHA}" \
+            --parameters "$parameters" \
+            --query 'Command.CommandId' --output text)
+          echo "command_id=${command_id}" >> "$GITHUB_OUTPUT"
+          echo "SSM command: ${command_id}"
+
+          # Poll for up to 50 minutes instead of the default ~100-second waiter.
+          deadline=$((SECONDS + 3000))
+          while (( SECONDS < deadline )); do
+            if status=$(aws ssm get-command-invocation \
+              --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" \
+              --query Status --output text 2>ssm-poll-error.txt); then
+              echo "Deployment status: ${status}"
+              case "$status" in
+                Success) exit 0 ;;
+                Pending|InProgress|Delayed|Cancelling) ;;
+                *) echo "::error::SSM deployment ended with status ${status}"; exit 1 ;;
+              esac
+            else
+              if ! grep -q 'InvocationDoesNotExist' ssm-poll-error.txt; then
+                cat ssm-poll-error.txt >&2
+                exit 1
+              fi
+            fi
+            sleep 15
+          done
+          echo '::error::Polling timed out. Check SSM Run Command before retrying; the command may still be running.'
+          exit 1
 
       - name: Show safe deployment result
         if: always() && steps.deploy.outputs.command_id != ''
-        run: aws ssm get-command-invocation --command-id "${{ steps.deploy.outputs.command_id }}" --instance-id "${EC2_INSTANCE_ID}" --query '{Status:Status,ResponseCode:ResponseCode}'
+        env:
+          COMMAND_ID: ${{ steps.deploy.outputs.command_id }}
+        run: |
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query '{Status:Status,StatusDetails:StatusDetails,ResponseCode:ResponseCode}'
+          # Inspect command output privately in AWS Systems Manager -> Run Command.
+          # Avoid copying raw application logs into public GitHub Actions logs.
