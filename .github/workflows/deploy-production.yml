@@ -26,13 +26,13 @@ jobs:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
       EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
       EC2_DEPLOY_PATH: ${{ vars.EC2_DEPLOY_PATH }}
-      PRODUCTION_DOMAIN: ${{ vars.PRODUCTION_DOMAIN }}
+      APPLICATION_BASE_URL: ${{ vars.APPLICATION_BASE_URL }}
     steps:
       - name: Validate deployment inputs
         shell: bash
         run: |
           set -euo pipefail
-          for value in AWS_REGION DEPLOY_SHA EC2_INSTANCE_ID EC2_DEPLOY_PATH PRODUCTION_DOMAIN; do
+          for value in AWS_REGION DEPLOY_SHA EC2_INSTANCE_ID EC2_DEPLOY_PATH; do
             test -n "${!value:-}" || { echo "Missing required production variable: ${value}"; exit 1; }
           done
 
@@ -51,13 +51,19 @@ jobs:
           set -Eeuo pipefail
           deploy_path='${EC2_DEPLOY_PATH}'
           deploy_sha='${DEPLOY_SHA}'
-          production_domain='${PRODUCTION_DOMAIN}'
+          application_base_url='${APPLICATION_BASE_URL}'
           cd "\${deploy_path}"
           test -f docker-compose.yml
           test -f .env
           command -v git >/dev/null
           command -v docker >/dev/null
           docker compose version >/dev/null
+          if [ -z "\${application_base_url}" ]; then
+            imds_token=\$(curl --fail --silent --show-error --request PUT --header 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token)
+            public_ip=\$(curl --fail --silent --show-error --header "X-aws-ec2-metadata-token: \${imds_token}" http://169.254.169.254/latest/meta-data/public-ipv4)
+            application_base_url="http://\${public_ip}"
+          fi
+          application_base_url="\${application_base_url%/}"
           sudo -u ubuntu -H git -C "\${deploy_path}" diff --quiet
           sudo -u ubuntu -H git -C "\${deploy_path}" diff --cached --quiet
           sudo -u ubuntu -H git -C "\${deploy_path}" fetch --prune origin "\${deploy_sha}"
@@ -68,13 +74,13 @@ jobs:
           rollback() {
             if [ -n "\${previous_revision}" ]; then
               export CLOUDWISE_IMAGE_TAG="\${previous_revision}"
-              export VITE_API_BASE_URL="https://\${production_domain}/api/v1"
+              export VITE_API_BASE_URL="\${application_base_url}/api/v1"
               docker compose -f docker-compose.production.yml up -d --no-build --no-deps backend worker scheduler frontend
             fi
           }
           trap rollback ERR
           export CLOUDWISE_IMAGE_TAG="\${deploy_sha}"
-          export VITE_API_BASE_URL="https://\${production_domain}/api/v1"
+          export VITE_API_BASE_URL="\${application_base_url}/api/v1"
           docker compose -f docker-compose.production.yml config --quiet
           docker compose -f docker-compose.production.yml build --pull backend frontend
           docker compose -f docker-compose.production.yml run --rm --no-deps backend alembic upgrade head

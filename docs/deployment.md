@@ -44,7 +44,7 @@ Configure these GitHub production environment values:
 | Variable | `AWS_REGION` | AWS deployment Region |
 | Variable | `EC2_INSTANCE_ID` | Existing SSM-managed instance identifier |
 | Variable | `EC2_DEPLOY_PATH` | Absolute application directory, currently expected to be `/home/ubuntu/FinOPs-Project` |
-| Variable | `PRODUCTION_DOMAIN` | Public application DNS name |
+| Variable | `APPLICATION_BASE_URL` | Optional public origin such as `http://203.0.113.10`; when omitted, EC2 discovers its public IPv4 address through IMDSv2 |
 
 Do not configure static `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` values.
 The deploy role should trust only the repository's GitHub OIDC subject and have
