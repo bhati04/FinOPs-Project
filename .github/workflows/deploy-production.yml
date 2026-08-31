@@ -165,11 +165,13 @@ jobs:
           echo "Application origin: ${application_base_url}"
 
           # Refuse to deploy over tracked changes made directly on EC2.
-          sudo -u ubuntu -H \
-            git -C "$deploy_path" diff --quiet
-
-          sudo -u ubuntu -H \
-            git -C "$deploy_path" diff --cached --quiet
+          if ! sudo -u ubuntu -H git -C "$deploy_path" diff --quiet || \
+             ! sudo -u ubuntu -H git -C "$deploy_path" diff --cached --quiet
+          then
+            echo "EC2 checkout has tracked changes; deployment stopped to avoid overwriting them"
+            sudo -u ubuntu -H git -C "$deploy_path" status --short
+            exit 1
+          fi
 
           # Fetch and check out the exact commit that passed CI.
           sudo -u ubuntu -H \
