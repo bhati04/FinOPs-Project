@@ -4,6 +4,17 @@ Tests cover configuration, health contracts, authentication security,
 organization boundaries, AWS provider responses, inventory normalization,
 middleware safety, and production builds.
 
+The root GitHub Actions workflow runs the same Compose validation and backend
+and frontend quality gates on pushes to `main` and on pull requests. Milestone 8
+also validates the Terraform configuration with:
+
+```bash
+cd infra/terraform
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate
+```
+
 ## Backend
 
 ```bash

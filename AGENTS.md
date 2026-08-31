@@ -4,10 +4,12 @@ These instructions apply to the entire repository.
 
 ## Product boundary
 
-CloudWise is a multi-tenant AWS FinOps platform. Milestone 0 establishes only
-the repository, runtime, health checks, CI, and documentation. Do not introduce
-authentication, customer AWS calls, inventory, costs, or recommendations until
-their milestone is approved.
+CloudWise is a multi-tenant AWS FinOps platform. Milestones 0 through 7 are
+implemented, and Milestone 8 production hardening was approved by the product
+owner on 2026-08-31. Milestone 8 work may add production infrastructure,
+deployment automation, observability, backup and recovery controls, and
+security hardening. Product features outside the approved milestone roadmap
+still require explicit approval.
 
 ## Engineering rules
 
@@ -28,4 +30,3 @@ their milestone is approved.
 
 Run `make check` where Make is available. Equivalent Docker commands are
 documented in `docs/testing.md`.
-

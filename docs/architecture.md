@@ -49,9 +49,10 @@ customer assumed role.
 ## Deployment direction
 
 The first production target is ECS Fargate across private subnets, behind an
-ALB, with RDS PostgreSQL and Redis. Terraform deployment resources are
-intentionally deferred to Milestone 8; the current skeleton pins the tool and
-provider contract without pretending to be production-ready.
+ALB, with RDS PostgreSQL and Redis. The approved Milestone 8 Terraform runtime
+now defines those resources and the guarded deployment flow. Hosted validation,
+alarms, restore exercises, and load/failure testing remain before it can claim
+production readiness.
 
 See the decision records for trade-offs and `docs/data-flow.md` for request
 boundaries.

@@ -33,8 +33,10 @@
   readiness API does not yet expose worker status.
 - Local PostgreSQL and Redis credentials are intentionally simple and must not
   be used outside local development.
-- Terraform defines validation and naming contracts only; it provisions no
-  infrastructure.
+- Terraform now defines the network, ECS, RDS, ElastiCache, ALB, DNS,
+  certificates, secrets, storage, registry, and logging runtime, with guarded
+  GitHub deployment automation. CloudWatch alarms, autoscaling, WAF, restoration
+  exercises, and load/failure testing are not yet present.
 - Request-size enforcement currently rejects oversized declared
   `Content-Length`; streaming byte enforcement will be added with write APIs.
 - Production observability, backup, restore, scaling, and SLOs are not yet

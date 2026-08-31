@@ -77,6 +77,9 @@ docker compose run --rm frontend-dev sh -c \
 See [local development](docs/local-development.md) and
 [testing](docs/testing.md) for native commands and troubleshooting.
 
+For the current restart point, next task, and validation history, see
+[project progress](docs/progress.md).
+
 For the complete EC2 deployment and product-readiness checklist, see
 [EC2 setup and full-functionality checklist](docs/ec2-full-setup-checklist.md).
 
@@ -92,6 +95,7 @@ For the complete EC2 deployment and product-readiness checklist, see
 | 5 | Cost and metrics | Implemented |
 | 6 | Recommendation engine | Implemented |
 | 7 | Reports, notifications, and audit | Implemented |
-| 8 | Production hardening and deployment | Not started |
+| 8 | Production hardening and deployment | In progress: infrastructure foundation |
 
-Milestone 8 still requires review before its scope is expanded.
+Milestone 8 was approved on 2026-08-31 and is being delivered in reviewable
+infrastructure, deployment, observability, and recovery slices.

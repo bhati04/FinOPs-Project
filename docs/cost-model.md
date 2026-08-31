@@ -49,5 +49,6 @@ credits, taxes, free-tier benefits, and partial-month usage. Missing or
 ambiguous pricing remains unavailable; a failed refresh retains an earlier
 estimate as stale.
 
-The platform's own production cost model will cover ECS, ALB, RDS, Redis,
-NAT/networking, logs, metrics, backups, and data transfer before Milestone 8.
+The platform's own production cost model must cover ECS, ALB, RDS, Redis,
+NAT/networking, logs, metrics, backups, and data transfer before production
+traffic is enabled during Milestone 8.
