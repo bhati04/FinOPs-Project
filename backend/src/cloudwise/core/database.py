@@ -2,7 +2,6 @@
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable
-from typing import TypeVar
 
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import (
@@ -17,7 +16,6 @@ from cloudwise.core.config import get_settings
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
-_ResultT = TypeVar("_ResultT")
 
 NAMING_CONVENTION = {
     "ix": "ix_%(column_0_label)s",
@@ -70,7 +68,7 @@ async def dispose_engine() -> None:
         _session_factory = None
 
 
-def run_async_job(awaitable: Awaitable[_ResultT]) -> _ResultT:
+def run_async_job[_ResultT](awaitable: Awaitable[_ResultT]) -> _ResultT:
     """Run one synchronous worker entrypoint without leaking its pool across event loops."""
 
     async def run_and_dispose() -> _ResultT:

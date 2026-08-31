@@ -1,5 +1,6 @@
 """Celery CloudWatch resource metric synchronization tasks."""
 
+import asyncio
 from datetime import UTC, datetime
 from uuid import UUID
 
